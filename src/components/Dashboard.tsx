@@ -1,5 +1,6 @@
 import { CandlestickChart } from "./CandlestickChart";
 import { Heatmap } from "./Heatmap";
+import { MarketDataStatus } from "./MarketDataStatus";
 import { ScreenerTable } from "./ScreenerTable";
 
 const metrics = [
@@ -41,6 +42,7 @@ export function Dashboard() {
           <Heatmap />
         </section>
 
+        <MarketDataStatus />
         <ScreenerTable />
       </div>
     </main>
