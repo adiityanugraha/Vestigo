@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/indicators.test.mts"
+    "test": "node --experimental-strip-types --test \"src/lib/*.test.mts\""
   },
   "dependencies": {
     "lightweight-charts": "^5.2.0",
