@@ -1,0 +1,17 @@
+export const IDX_WATCHLIST = [
+  "BBCA",
+  "BBRI",
+  "BMRI",
+  "TLKM",
+  "ASII",
+  "UNVR",
+  "ICBP",
+  "INDF",
+  "ANTM",
+  "MDKA",
+  "ADRO",
+  "PGAS",
+  "BRIS",
+  "CPIN",
+  "INCO",
+] as const;

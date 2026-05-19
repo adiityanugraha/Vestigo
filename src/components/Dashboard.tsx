@@ -1,7 +1,6 @@
 import { CandlestickChart } from "./CandlestickChart";
 import { Heatmap } from "./Heatmap";
-import { MarketDataStatus } from "./MarketDataStatus";
-import { ScreenerTable } from "./ScreenerTable";
+import { PredictionPanel } from "./PredictionPanel";
 
 const metrics = [
   { label: "BSJP", value: "Top 5", tone: "text-emerald-300" },
@@ -42,8 +41,7 @@ export function Dashboard() {
           <Heatmap />
         </section>
 
-        <MarketDataStatus />
-        <ScreenerTable />
+        <PredictionPanel />
       </div>
     </main>
   );

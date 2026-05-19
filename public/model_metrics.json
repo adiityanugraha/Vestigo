@@ -1,5 +1,4 @@
 {
-  "generatedAt": "2026-05-17T22:42:01.032629+00:00",
   "model": "RandomForestClassifier",
   "target": "next_day_close_return_positive",
   "features": [
@@ -19,8 +18,6 @@
   ],
   "trainRows": 14190,
   "testRows": 3540,
-  "periodStart": "2021-06-15",
-  "periodEnd": "2026-05-14",
   "splitDate": "2025-05-20",
   "accuracy": 0.5387005649717514,
   "precision": 0.4573584905660377,
