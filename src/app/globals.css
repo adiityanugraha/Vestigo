@@ -26,3 +26,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+* {
+  box-sizing: border-box;
+}

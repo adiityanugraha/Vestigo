@@ -17,6 +17,25 @@ export function PredictionPanel() {
     error: null,
   });
 
+  function runPipeline() {
+    setState({ status: "loading", result: null, error: null });
+
+    return runPredictionPipeline(IDX_WATCHLIST)
+      .then((result) => {
+        setState({ status: "ready", result, error: null });
+      })
+      .catch((error: unknown) => {
+        setState({
+          status: "error",
+          result: null,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Prediction pipeline failed",
+        });
+      });
+  }
+
   useEffect(() => {
     let ignore = false;
 
@@ -46,7 +65,7 @@ export function PredictionPanel() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
+      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-base font-semibold text-white">ML Screener</h2>
@@ -60,13 +79,39 @@ export function PredictionPanel() {
         </div>
 
         {state.status === "loading" && (
-          <p className="mt-4 text-sm text-slate-400">
-            Running IDX watchlist pipeline...
-          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            {["Market data", "Indicators", "ONNX model", "Ranking"].map(
+              (label) => (
+                <div
+                  className="h-20 rounded-lg border border-white/10 bg-slate-950/60 p-4"
+                  key={label}
+                >
+                  <p className="text-xs text-slate-500">{label}</p>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full w-2/3 animate-pulse rounded-full bg-sky-400/70" />
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
         )}
 
         {state.status === "error" && (
-          <p className="mt-4 text-sm text-rose-300">{state.error}</p>
+          <div className="mt-5 rounded-lg border border-rose-400/30 bg-rose-500/10 p-4">
+            <p className="text-sm font-medium text-rose-200">
+              Pipeline failed
+            </p>
+            <p className="mt-1 text-sm text-rose-100/80">{state.error}</p>
+            <button
+              className="mt-4 rounded-lg border border-rose-300/30 px-3 py-2 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-400/10"
+              onClick={() => {
+                void runPipeline();
+              }}
+              type="button"
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         {state.status === "ready" && (
@@ -81,10 +126,12 @@ export function PredictionPanel() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ScreenerTable
+          isLoading={state.status === "loading"}
           title="Top 5 BSJP"
           rows={state.status === "ready" ? state.result.bsjp : []}
         />
         <ScreenerTable
+          isLoading={state.status === "loading"}
           title="Top 5 BPJS"
           rows={state.status === "ready" ? state.result.bpjs : []}
         />

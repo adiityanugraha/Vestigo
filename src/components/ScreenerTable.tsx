@@ -1,13 +1,18 @@
 import type { PredictedScreenerCandidate } from "@/lib/predictionPipeline";
 
 type ScreenerTableProps = {
+  isLoading?: boolean;
   title: string;
   rows: PredictedScreenerCandidate[];
 };
 
-export function ScreenerTable({ title, rows }: ScreenerTableProps) {
+export function ScreenerTable({
+  isLoading = false,
+  title,
+  rows,
+}: ScreenerTableProps) {
   return (
-    <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
+    <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
       <div className="border-b border-white/10 px-5 py-4">
         <h2 className="text-base font-semibold text-white">{title}</h2>
       </div>
@@ -24,14 +29,24 @@ export function ScreenerTable({ title, rows }: ScreenerTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
-            {rows.length === 0 && (
+            {isLoading &&
+              Array.from({ length: 3 }, (_, index) => (
+                <tr className="text-slate-300" key={index}>
+                  {Array.from({ length: 6 }, (_, cellIndex) => (
+                    <td className="px-5 py-4" key={cellIndex}>
+                      <div className="h-3 w-20 animate-pulse rounded-full bg-white/10" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            {!isLoading && rows.length === 0 && (
               <tr>
                 <td className="px-5 py-5 text-slate-400" colSpan={6}>
-                  No candidates
+                  No candidates match the current strict strategy filters.
                 </td>
               </tr>
             )}
-            {rows.map((row) => (
+            {!isLoading && rows.map((row) => (
               <tr
                 className="text-slate-200"
                 key={`${row.current.symbol}-${row.strategy}`}
