@@ -10,7 +10,15 @@ type PredictionState =
   | { status: "ready"; result: PredictionPipelineResult; error: null }
   | { status: "error"; result: null; error: string };
 
-export function PredictionPanel() {
+type PredictionPanelProps = {
+  onSelectSymbol: (symbol: string) => void;
+  selectedSymbol: string;
+};
+
+export function PredictionPanel({
+  onSelectSymbol,
+  selectedSymbol,
+}: PredictionPanelProps) {
   const [state, setState] = useState<PredictionState>({
     status: "loading",
     result: null,
@@ -127,11 +135,15 @@ export function PredictionPanel() {
       <div className="grid gap-6 xl:grid-cols-2">
         <ScreenerTable
           isLoading={state.status === "loading"}
+          onSelectSymbol={onSelectSymbol}
+          selectedSymbol={selectedSymbol}
           title="Top 5 BSJP"
           rows={state.status === "ready" ? state.result.bsjp : []}
         />
         <ScreenerTable
           isLoading={state.status === "loading"}
+          onSelectSymbol={onSelectSymbol}
+          selectedSymbol={selectedSymbol}
           title="Top 5 BPJS"
           rows={state.status === "ready" ? state.result.bpjs : []}
         />
