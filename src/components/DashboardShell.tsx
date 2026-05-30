@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 const navItems = [
-  { label: "Dashboard", active: true },
-  { label: "Screener", active: false },
-  { label: "Backtest", active: false },
-  { label: "Model", active: false },
+  { label: "Dashboard", href: "/" },
+  { label: "Screener", href: "/" },
+  { label: "Backtest", href: "/backtest" },
+  { label: "Model", href: "/backtest" },
 ];
 
 const marketStats = [
@@ -15,9 +16,17 @@ const marketStats = [
 
 type DashboardShellProps = {
   children: ReactNode;
+  activeNav?: string;
+  eyebrow?: string;
+  title?: string;
 };
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  activeNav = "Dashboard",
+  eyebrow = "IDX Daily Screener",
+  title = "Dashboard",
+}: DashboardShellProps) {
   return (
     <main className="min-h-screen bg-[#060a14] text-slate-100">
       <div className="flex min-h-screen">
@@ -34,17 +43,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
             <nav className="mt-8 flex flex-col gap-1">
               {navItems.map((item) => (
-                <a
+                <Link
                   className={`rounded-lg px-3 py-2 text-sm transition-colors ${
-                    item.active
+                    item.label === activeNav
                       ? "bg-white/10 text-white"
                       : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-100"
                   }`}
-                  href="#"
+                  href={item.href}
                   key={item.label}
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -63,10 +72,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    IDX Daily Screener
+                    {eyebrow}
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-normal text-white md:text-3xl">
-                    Dashboard
+                    {title}
                   </h2>
                 </div>
 
@@ -87,17 +96,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
               <nav className="flex gap-2 overflow-x-auto lg:hidden">
                 {navItems.map((item) => (
-                  <a
+                  <Link
                     className={`shrink-0 rounded-lg px-3 py-2 text-sm ${
-                      item.active
+                      item.label === activeNav
                         ? "bg-white/10 text-white"
                         : "text-slate-400"
                     }`}
-                    href="#"
+                    href={item.href}
                     key={item.label}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>
