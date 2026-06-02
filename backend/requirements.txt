@@ -1,0 +1,31 @@
+# Pocket Screener — Backend dependencies (Phase 2)
+# Python 3.11. Install: pip install -r requirements.txt
+# Versi di-pin dari instalasi pertama (2026-06-02) untuk reproducibility.
+
+# --- Web framework ---
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+
+# --- Konfigurasi ---
+pydantic-settings==2.14.1
+python-dotenv==1.2.2
+
+# --- Database (PostgreSQL) ---
+sqlalchemy==2.0.50
+psycopg2-binary==2.9.12   # binary build agar mudah di Windows (pengganti psycopg2)
+
+# --- Cache ---
+redis==8.0.0
+
+# --- Scheduler ---
+apscheduler==3.11.2
+
+# --- ML inference ---
+onnxruntime==1.26.0
+
+# --- Data / numerik ---
+pandas==3.0.3
+numpy==1.26.4             # <2 untuk kompatibilitas onnxruntime
+
+# --- HTTP client (fetch Yahoo Finance server-side, dipakai mulai Day 3) ---
+httpx==0.28.1

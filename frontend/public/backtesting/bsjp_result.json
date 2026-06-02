@@ -1,0 +1,381 @@
+{
+  "strategy": "BSJP",
+  "generatedAt": "2026-05-30T13:00:43.985081+00:00",
+  "source": "data/historical_daily.csv",
+  "symbols": [
+    "ADRO.JK",
+    "ANTM.JK",
+    "ASII.JK",
+    "BBCA.JK",
+    "BBRI.JK",
+    "BMRI.JK",
+    "BRIS.JK",
+    "CPIN.JK",
+    "ICBP.JK",
+    "INCO.JK",
+    "INDF.JK",
+    "MDKA.JK",
+    "PGAS.JK",
+    "TLKM.JK",
+    "UNVR.JK"
+  ],
+  "periodStart": "2021-05-17",
+  "periodEnd": "2026-05-15",
+  "totalTrades": 361,
+  "winrate": 0.5623268698060941,
+  "cumulativeReturn": 3.8544200116672416,
+  "averageReturn": 0.004474425004860104,
+  "maxDrawdown": -0.13002547681012444,
+  "sampleTrades": [
+    {
+      "symbol": "PGAS.JK",
+      "date": "2024-04-30 00:00:00",
+      "entry": 1470.0,
+      "exit": 1445.0,
+      "return_pct": -0.017006802721088454
+    },
+    {
+      "symbol": "PGAS.JK",
+      "date": "2024-06-21 00:00:00",
+      "entry": 1505.0,
+      "exit": 1505.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "PGAS.JK",
+      "date": "2024-11-25 00:00:00",
+      "entry": 1570.0,
+      "exit": 1570.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "PGAS.JK",
+      "date": "2025-01-06 00:00:00",
+      "entry": 1715.0,
+      "exit": 1720.0,
+      "return_pct": 0.00291545189504383
+    },
+    {
+      "symbol": "PGAS.JK",
+      "date": "2025-10-23 00:00:00",
+      "entry": 1770.0,
+      "exit": 1780.0,
+      "return_pct": 0.005649717514124353
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2021-05-31 00:00:00",
+      "entry": 3440.0,
+      "exit": 3490.0,
+      "return_pct": 0.014534883720930258
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2021-11-19 00:00:00",
+      "entry": 3900.0,
+      "exit": 3920.0,
+      "return_pct": 0.00512820512820511
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2021-11-25 00:00:00",
+      "entry": 4000.0,
+      "exit": 4040.0,
+      "return_pct": 0.010000000000000009
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2024-11-19 00:00:00",
+      "entry": 2780.0,
+      "exit": 2740.0,
+      "return_pct": -0.014388489208633115
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2024-12-03 00:00:00",
+      "entry": 2820.0,
+      "exit": 2820.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-08-12 00:00:00",
+      "entry": 3180.0,
+      "exit": 3220.0,
+      "return_pct": 0.012578616352201255
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-08-13 00:00:00",
+      "entry": 3360.0,
+      "exit": 3370.0,
+      "return_pct": 0.0029761904761904656
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-09-15 00:00:00",
+      "entry": 3260.0,
+      "exit": 3300.0,
+      "return_pct": 0.012269938650306678
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-10-21 00:00:00",
+      "entry": 3280.0,
+      "exit": 3220.0,
+      "return_pct": -0.018292682926829285
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-10-23 00:00:00",
+      "entry": 3360.0,
+      "exit": 3370.0,
+      "return_pct": 0.0029761904761904656
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2025-11-24 00:00:00",
+      "entry": 3700.0,
+      "exit": 3690.0,
+      "return_pct": -0.002702702702702675
+    },
+    {
+      "symbol": "TLKM.JK",
+      "date": "2026-03-25 00:00:00",
+      "entry": 3300.0,
+      "exit": 3240.0,
+      "return_pct": -0.018181818181818188
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2021-07-01 00:00:00",
+      "entry": 5225.0,
+      "exit": 5200.0,
+      "return_pct": -0.004784688995215336
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2021-09-22 00:00:00",
+      "entry": 4040.0,
+      "exit": 4050.0,
+      "return_pct": 0.0024752475247524774
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2021-10-07 00:00:00",
+      "entry": 4830.0,
+      "exit": 4880.0,
+      "return_pct": 0.010351966873705987
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2021-10-13 00:00:00",
+      "entry": 5250.0,
+      "exit": 5250.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2021-11-11 00:00:00",
+      "entry": 4660.0,
+      "exit": 4690.0,
+      "return_pct": 0.006437768240343367
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-03-16 00:00:00",
+      "entry": 3450.0,
+      "exit": 3490.0,
+      "return_pct": 0.011594202898550732
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-03-30 00:00:00",
+      "entry": 3720.0,
+      "exit": 3730.0,
+      "return_pct": 0.0026881720430107503
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-04-25 00:00:00",
+      "entry": 3690.0,
+      "exit": 3720.0,
+      "return_pct": 0.008130081300812941
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-04-26 00:00:00",
+      "entry": 3890.0,
+      "exit": 3890.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-05-10 00:00:00",
+      "entry": 4380.0,
+      "exit": 4400.0,
+      "return_pct": 0.004566210045662045
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-06-20 00:00:00",
+      "entry": 5025.0,
+      "exit": 5050.0,
+      "return_pct": 0.004975124378109541
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2022-10-19 00:00:00",
+      "entry": 5350.0,
+      "exit": 5350.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2023-04-27 00:00:00",
+      "entry": 4400.0,
+      "exit": 4400.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2024-04-25 00:00:00",
+      "entry": 2640.0,
+      "exit": 2650.0,
+      "return_pct": 0.0037878787878788955
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2024-05-21 00:00:00",
+      "entry": 2910.0,
+      "exit": 2910.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2024-11-25 00:00:00",
+      "entry": 1915.0,
+      "exit": 1920.0,
+      "return_pct": 0.0026109660574411553
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2024-12-10 00:00:00",
+      "entry": 2000.0,
+      "exit": 2000.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-03-07 00:00:00",
+      "entry": 1200.0,
+      "exit": 1205.0,
+      "return_pct": 0.004166666666666652
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-03-13 00:00:00",
+      "entry": 1260.0,
+      "exit": 1270.0,
+      "return_pct": 0.007936507936507908
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-04-25 00:00:00",
+      "entry": 1750.0,
+      "exit": 1760.0,
+      "return_pct": 0.005714285714285783
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-07-03 00:00:00",
+      "entry": 1595.0,
+      "exit": 1600.0,
+      "return_pct": 0.0031347962382444194
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-07-31 00:00:00",
+      "entry": 1710.0,
+      "exit": 1705.0,
+      "return_pct": -0.0029239766081871066
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-09-26 00:00:00",
+      "entry": 1830.0,
+      "exit": 1830.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-10-16 00:00:00",
+      "entry": 1985.0,
+      "exit": 1985.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-10-20 00:00:00",
+      "entry": 2080.0,
+      "exit": 2100.0,
+      "return_pct": 0.009615384615384581
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-10-23 00:00:00",
+      "entry": 2260.0,
+      "exit": 2260.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-10-24 00:00:00",
+      "entry": 2530.0,
+      "exit": 2580.0,
+      "return_pct": 0.01976284584980248
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2025-12-16 00:00:00",
+      "entry": 2710.0,
+      "exit": 2700.0,
+      "return_pct": -0.0036900369003689537
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2026-02-02 00:00:00",
+      "entry": 2030.0,
+      "exit": 2010.0,
+      "return_pct": -0.009852216748768461
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2026-02-05 00:00:00",
+      "entry": 2210.0,
+      "exit": 2190.0,
+      "return_pct": -0.009049773755656076
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2026-02-23 00:00:00",
+      "entry": 2370.0,
+      "exit": 2370.0,
+      "return_pct": 0.0
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2026-03-17 00:00:00",
+      "entry": 2000.0,
+      "exit": 1930.0,
+      "return_pct": -0.03500000000000003
+    },
+    {
+      "symbol": "UNVR.JK",
+      "date": "2026-05-06 00:00:00",
+      "entry": 1805.0,
+      "exit": 1810.0,
+      "return_pct": 0.0027700831024930483
+    }
+  ]
+}
