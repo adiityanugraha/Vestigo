@@ -51,8 +51,46 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function fetchBacktestResult(url: string): Promise<BacktestResult> {
-  return fetchJson<BacktestResult>(url);
+// Sample trade mentah dari JSON. File hasil notebook (offline) memakai
+// snake_case (date, return_pct, tanpa win); script .mjs memakai camelCase
+// (signalDate, returnPct, win). Reader menerima keduanya agar tahan format.
+type RawSampleTrade = {
+  symbol: string;
+  signalDate?: string;
+  date?: string;
+  entry: number;
+  exit: number;
+  returnPct?: number;
+  return_pct?: number;
+  win?: boolean;
+};
+
+type RawBacktestResult = Omit<BacktestResult, "sampleTrades"> & {
+  sampleTrades?: RawSampleTrade[];
+};
+
+function normalizeTrade(raw: RawSampleTrade): SampleTrade {
+  const returnPct = raw.returnPct ?? raw.return_pct ?? 0;
+  // "2024-04-30 00:00:00" -> "2024-04-30"
+  const signalDate = (raw.signalDate ?? raw.date ?? "").slice(0, 10);
+
+  return {
+    symbol: raw.symbol,
+    signalDate,
+    entry: raw.entry,
+    exit: raw.exit,
+    returnPct,
+    win: raw.win ?? returnPct > 0,
+  };
+}
+
+export async function fetchBacktestResult(url: string): Promise<BacktestResult> {
+  const raw = await fetchJson<RawBacktestResult>(url);
+
+  return {
+    ...raw,
+    sampleTrades: (raw.sampleTrades ?? []).map(normalizeTrade),
+  };
 }
 
 export function fetchModelMetrics(): Promise<ModelMetrics> {
