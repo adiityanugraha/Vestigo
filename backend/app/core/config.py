@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Comma-separated string di .env, mis. "http://localhost:3000,https://app.vercel.app"
     cors_origins: str = "http://localhost:3000"
 
+    # Path file model ONNX. Default (None) -> backend/app/ml/model.onnx
+    # (resolve di app.ml.inference). Override lewat env ONNX_MODEL_PATH bila perlu.
+    onnx_model_path: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
