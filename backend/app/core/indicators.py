@@ -48,6 +48,12 @@ class BollingerBand:
     lower: float | None
 
 
+@dataclass(frozen=True)
+class VolumeSpike:
+    ratio: float | None
+    is_spike: bool
+
+
 # --------------------------------------------------------------------------- #
 # Helper internal
 # --------------------------------------------------------------------------- #
@@ -269,3 +275,29 @@ def calculate_vwap(bars: Sequence[HasOhlc]) -> Series:
         )
 
     return vwap
+
+
+# --------------------------------------------------------------------------- #
+# Volume spike (dipakai screener)
+# --------------------------------------------------------------------------- #
+def calculate_volume_spike(
+    volumes: Sequence[float],
+    period: int = 20,
+    multiplier: float = 1.5,
+) -> list[VolumeSpike]:
+    """Rasio volume vs rata-rata `period` hari sebelumnya. Port dari
+    calculateVolumeSpike (indicators.ts). Posisi < period -> ratio None."""
+    _validate_period(period)
+
+    result: list[VolumeSpike] = []
+    for index, volume in enumerate(volumes):
+        if index < period:
+            result.append(VolumeSpike(ratio=None, is_spike=False))
+            continue
+        baseline = _average(volumes[index - period : index])
+        ratio = None if baseline == 0 else volume / baseline
+        result.append(
+            VolumeSpike(ratio=ratio, is_spike=ratio is not None and ratio >= multiplier)
+        )
+
+    return result
