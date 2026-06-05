@@ -13,16 +13,18 @@ Query params:
 
 from __future__ import annotations
 
+from datetime import date as date_cls
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.cache import redis_client
 from app.core import screener as screener_core
-from app.db.models import MarketData, Stock
+from app.db.models import MarketData, ScreeningHistory, Stock
 from app.db.session import get_db
 from app.ml import inference
 from app.ml.features import build_feature_vector
@@ -86,6 +88,7 @@ class ScreenerResponse(BaseModel):
     generated_at: str
     universe: int
     screened: int
+    persisted: int = 0
     cached: bool
     bsjp: list[CandidateOut]
     bpjs: list[CandidateOut]
@@ -171,6 +174,35 @@ def _predict(bars: list[MarketData]) -> inference.Prediction | None:
         return None
 
 
+def _persist_screening_history(db: Session, candidates: list[dict]) -> int:
+    """Simpan seluruh kandidat yang lolos screener ke screening_history.
+
+    Idempoten: upsert per (date, ticker, strategy). Skor yang disimpan adalah
+    skor screener (bukan predictionScore) sesuai skema blueprint. Dipakai Day 12
+    (riwayat & performance tracking).
+    """
+    if not candidates:
+        return 0
+
+    rows = [
+        {
+            "date": date_cls.fromisoformat(candidate["date"]),
+            "ticker": candidate["ticker"],
+            "score": candidate["score"],
+            "strategy": candidate["strategy"],
+        }
+        for candidate in candidates
+    ]
+    stmt = pg_insert(ScreeningHistory).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_screening_date_ticker_strategy",
+        set_={"score": stmt.excluded.score},
+    )
+    db.execute(stmt)
+    db.commit()
+    return len(rows)
+
+
 def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
     bars_by_ticker = _load_bars_by_ticker(db)
     stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
@@ -186,6 +218,9 @@ def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
                 _candidate_to_dict(candidate, bars, prediction, stock_map.get(ticker))
             )
 
+    # Persist hasil harian (semua yang lolos, bukan hanya top-N) untuk Day 12.
+    _persist_screening_history(db, all_candidates)
+
     def top(strategy: str) -> list[dict]:
         items = [c for c in all_candidates if c["strategy"] == strategy]
         items.sort(key=lambda c: c["prediction_score"], reverse=True)
@@ -195,6 +230,7 @@ def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "universe": len(bars_by_ticker),
         "screened": len(all_candidates),
+        "persisted": len(all_candidates),
         "cached": False,
         "bsjp": top("BSJP"),
         "bpjs": top("BPJS"),
