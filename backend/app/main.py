@@ -12,7 +12,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health, market_data, ranking, screener, stock_report
+from app.api import health, market_data, ranking, risk, screener, stock_report
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -38,6 +38,7 @@ app.include_router(screener.router)
 app.include_router(market_data.router)
 app.include_router(ranking.router)
 app.include_router(stock_report.router)
+app.include_router(risk.router)
 
 
 @app.get("/")
