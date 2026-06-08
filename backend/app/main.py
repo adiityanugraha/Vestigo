@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     health,
+    history,
     market_breadth,
     market_data,
     ranking,
@@ -50,6 +51,7 @@ app.include_router(stock_report.router)
 app.include_router(risk.router)
 app.include_router(support_resistance.router)
 app.include_router(market_breadth.router)
+app.include_router(history.router)
 
 
 @app.get("/")
