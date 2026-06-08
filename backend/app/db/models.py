@@ -6,11 +6,13 @@ Tabel (sesuai blueprint):
   - screening_history : hasil screener harian (BSJP/BPJS)
   - backtesting       : ringkasan performa strategi
   - user_watchlist    : watchlist per user
+  - market_breadth    : ringkasan breadth pasar harian (Day 11)
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -23,6 +25,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -106,6 +109,32 @@ class Backtesting(Base):
     winrate: Mapped[float | None] = mapped_column(Float)
     cumulative_return: Mapped[float | None] = mapped_column(Float)
     max_drawdown: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class MarketBreadth(Base):
+    """Ringkasan breadth pasar per tanggal (satu baris per hari bursa).
+
+    Scalar (advancers/decliners/ratio) untuk query cepat; bagian berdaftar
+    (top gainers/losers, performa sektor) disimpan sebagai JSONB.
+    """
+
+    __tablename__ = "market_breadth"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, unique=True, index=True)
+    advancers: Mapped[int] = mapped_column(Integer, default=0)
+    decliners: Mapped[int] = mapped_column(Integer, default=0)
+    unchanged: Mapped[int] = mapped_column(Integer, default=0)
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    bullish_ratio: Mapped[float | None] = mapped_column(Float)  # adv / (adv + dec)
+
+    top_gainers: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    top_losers: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    sector_performance: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
