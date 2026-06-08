@@ -9,6 +9,9 @@ Docs (Swagger): http://localhost:8000/docs
 
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,13 +27,30 @@ from app.api import (
     support_resistance,
 )
 from app.core.config import get_settings
+from app.scheduler import scheduler as scheduler_module
 
 settings = get_settings()
+log = logging.getLogger("app")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start/stop scheduler job harian bersama siklus hidup aplikasi (Day 13)."""
+    if settings.scheduler_enabled:
+        scheduler_module.start()
+    else:
+        log.info("Scheduler dimatikan (SCHEDULER_ENABLED=false).")
+    try:
+        yield
+    finally:
+        scheduler_module.shutdown()
+
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="Backend Pocket Screener Phase 2: screener, scoring, analytics & reporting.",
+    lifespan=lifespan,
 )
 
 # CORS — frontend (Next.js) memanggil API ini dari origin yang berbeda.

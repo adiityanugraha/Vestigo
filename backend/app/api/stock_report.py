@@ -118,6 +118,35 @@ def build_report_input(
     )
 
 
+def assemble_report_payload(
+    db: Session, ticker: str, bars: list[MarketData], use_ml: bool
+) -> dict:
+    """Rakit payload report dari bar yang SUDAH divalidasi (>= MIN_BARS).
+
+    Dipakai bersama oleh endpoint & job scheduler (Day 13) agar bentuk cache identik.
+    """
+    probability_up = _predict_up(bars) if use_ml else None
+    report = ai_report.generate_report(ticker, build_report_input(bars, probability_up))
+
+    stock = db.get(Stock, ticker)
+    latest = bars[-1]
+    return StockReportResponse(
+        ticker=ticker,
+        name=stock.name if stock else None,
+        sector=stock.sector if stock else None,
+        date=latest.date.isoformat(),
+        close=latest.close,
+        score=report.score,
+        sentiment=report.sentiment,
+        summary=report.summary,
+        bullishFactors=report.bullish_factors,
+        riskFactors=report.risk_factors,
+        use_ml=use_ml,
+        cached=False,
+        generated_at=datetime.now(timezone.utc).isoformat(),
+    ).model_dump()
+
+
 @router.get("/{ticker}", response_model=StockReportResponse)
 def get_stock_report(
     ticker: str,
@@ -146,26 +175,6 @@ def get_stock_report(
             detail=f"Data '{ticker}' belum cukup ({len(bars)} bar, minimal {MIN_BARS}).",
         )
 
-    probability_up = _predict_up(bars) if use_ml else None
-    report = ai_report.generate_report(ticker, build_report_input(bars, probability_up))
-
-    stock = db.get(Stock, ticker)
-    latest = bars[-1]
-    result = StockReportResponse(
-        ticker=ticker,
-        name=stock.name if stock else None,
-        sector=stock.sector if stock else None,
-        date=latest.date.isoformat(),
-        close=latest.close,
-        score=report.score,
-        sentiment=report.sentiment,
-        summary=report.summary,
-        bullishFactors=report.bullish_factors,
-        riskFactors=report.risk_factors,
-        use_ml=use_ml,
-        cached=False,
-        generated_at=datetime.now(timezone.utc).isoformat(),
-    ).model_dump()
-
+    result = assemble_report_payload(db, ticker, bars, use_ml)
     redis_client.cache_set_json(cache_key, result, ttl=redis_client.TTL_REPORT)
     return result

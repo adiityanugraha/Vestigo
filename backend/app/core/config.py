@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # (resolve di app.ml.inference). Override lewat env ONNX_MODEL_PATH bila perlu.
     onnx_model_path: str | None = None
 
+    # Scheduler (Day 13). Job harian otomatis dijalankan saat startup FastAPI.
+    # Set SCHEDULER_ENABLED=false di .env untuk mematikan (mis. saat testing).
+    scheduler_enabled: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
