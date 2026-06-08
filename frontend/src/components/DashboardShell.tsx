@@ -57,10 +57,11 @@ export function DashboardShell({
             </nav>
 
             <div className="mt-auto rounded-lg border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs text-slate-400">Mode</p>
-              <p className="mt-1 text-sm font-medium text-emerald-300">
-                Phase 2 · REST API
+              <p className="text-xs text-slate-400">© 2026</p>
+              <p className="mt-1 text-sm font-medium leading-snug text-slate-100">
+                Anak Agung Aryadipa Aditya Nugraha
               </p>
+              <p className="mt-1 text-[11px] text-slate-500">All rights reserved</p>
             </div>
           </div>
         </aside>

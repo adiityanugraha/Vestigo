@@ -72,6 +72,7 @@ Kredensial hanya di `.env` (lokal) / environment variables (produksi).
 Jangan commit `.env`. Hanya `.env.example` yang di-push.
 
 ## Kontribusi
-Dikembangkan oleh **[@adiityanugraha](https://github.com/adiityanugraha)**.
-Backend Phase 2 ini dikerjakan dengan bantuan **Claude (Anthropic)** sebagai AI
-pair-programmer melalui Claude Code.
+Dikembangkan oleh **Anak Agung Aryadipa Aditya Nugraha**
+([@adiityanugraha](https://github.com/adiityanugraha)). Backend Phase 2 ini
+dikerjakan dengan bantuan **Claude (Anthropic)** sebagai AI pair-programmer
+melalui Claude Code.

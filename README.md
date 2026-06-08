@@ -131,10 +131,19 @@ Detail tiap bagian: **[backend/README.md](backend/README.md)** dan
 
 ## Kontribusi & Pengembangan
 
-Dikembangkan oleh **[@adiityanugraha](https://github.com/adiityanugraha)**.
+Dikembangkan oleh **Anak Agung Aryadipa Aditya Nugraha**
+([@adiityanugraha](https://github.com/adiityanugraha)).
 
 Backend **Phase 2** (FastAPI: data pipeline, composite score, AI report, risk
 meter, support/resistance, market breadth, screener history, scheduler) dan
 **integrasi frontend ke REST API** dikerjakan dengan bantuan **Claude
 (Anthropic)** sebagai AI pair-programmer melalui Claude Code — sehingga
 "Claude" tercatat sebagai _contributor_ pada riwayat Git repositori ini.
+
+---
+
+## Lisensi
+
+© 2026 Anak Agung Aryadipa Aditya Nugraha. Dirilis di bawah
+**[MIT License](LICENSE)** — bebas dipakai/dimodifikasi selama mencantumkan
+notice hak cipta & lisensi ini.

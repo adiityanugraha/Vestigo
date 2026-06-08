@@ -160,9 +160,10 @@ Dioptimalkan untuk **Vercel**. Saat impor, set **Root Directory = `frontend`**.
 
 ## Kontribusi
 
-Dikembangkan oleh **[@adiityanugraha](https://github.com/adiityanugraha)**.
-Integrasi frontend ke backend Phase 2 (lapisan `lib/api.ts`, hook `useApi`, dan
-card analitik) dikerjakan dengan bantuan **Claude (Anthropic)** via Claude Code.
+Dikembangkan oleh **Anak Agung Aryadipa Aditya Nugraha**
+([@adiityanugraha](https://github.com/adiityanugraha)). Integrasi frontend ke
+backend Phase 2 (lapisan `lib/api.ts`, hook `useApi`, dan card analitik)
+dikerjakan dengan bantuan **Claude (Anthropic)** via Claude Code.
 
 ---
 
