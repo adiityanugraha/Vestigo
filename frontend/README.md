@@ -9,6 +9,25 @@ dan inferensi model dijalankan via **ONNX Runtime Web**.
 > inferensi ML) berjalan di browser. Hasil backtesting & metrik model
 > di-_pre-compute_ offline lalu ditampilkan sebagai snapshot JSON statis.
 
+> ### ⚡ Update Phase 2 — Backend REST API
+>
+> Frontend kini terhubung ke **backend FastAPI** (lihat [../README.md](../README.md)).
+> Komputasi berat (fetch Yahoo, indikator, inferensi ONNX) dipindah server-side;
+> komponen memanggil REST API lewat `src/lib/api.ts`.
+>
+> - **Base URL** dari `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8000`).
+> - **Halaman:**
+>   - `/` **Dashboard** → konteks pasar **IHSG** (chart + AI Report + Risk Meter + S/R), simbol terkunci.
+>   - `/screener` **Screener** → Market Breadth, tabel screener BSJP/BPJS, chart & analitik saham terpilih, Composite Score, Screener History.
+>   - `/backtest` → snapshot backtesting offline (tetap dari Phase 1).
+> - **Card baru** (Phase 2): `AiReportCard`, `RiskMeterCard`, `SupportResistanceCard`,
+>   `MarketBreadthCard`, `CompositeScoreCard`, `ScreenerHistoryCard` + hook `useApi`.
+> - File Phase 1 (`predictionPipeline.ts`, `mlInference.ts`, `fetchData.ts`, `Heatmap.tsx`)
+>   masih ada untuk halaman Backtest, tetapi tak lagi dipakai dashboard utama.
+>
+> Bagian di bawah ini mendokumentasikan desain **Phase 1** (komputasi browser)
+> sebagai referensi.
+
 ## Fitur
 
 - **Screener BSJP** (Beli Sore Jual Pagi) & **BPJS** (Beli Pagi Jual Sore) —
@@ -123,9 +142,12 @@ pocket-screener/
 
 ## Deployment
 
-Dioptimalkan untuk **Vercel** (frontend-only). Push repo, import ke Vercel,
-build dengan setelan default Next.js — tidak butuh environment variable maupun
-backend terpisah.
+Dioptimalkan untuk **Vercel**. Saat impor, set **Root Directory = `frontend`**.
+
+- **Phase 1:** tidak butuh environment variable maupun backend.
+- **Phase 2:** set `NEXT_PUBLIC_API_BASE_URL` di Environment Variables Vercel ke
+  URL backend produksi (Railway), dan pastikan domain Vercel masuk `CORS_ORIGINS`
+  di backend.
 
 ## Catatan & Roadmap
 
@@ -135,6 +157,12 @@ backend terpisah.
 - Fase berikutnya (saat backend tersedia): pindah fetching & inferensi ke
   FastAPI, tambah intraday 1m/5m, Foreign Flow & Sector Rotation, scheduled job,
   serta storage permanen.
+
+## Kontribusi
+
+Dikembangkan oleh **[@adiityanugraha](https://github.com/adiityanugraha)**.
+Integrasi frontend ke backend Phase 2 (lapisan `lib/api.ts`, hook `useApi`, dan
+card analitik) dikerjakan dengan bantuan **Claude (Anthropic)** via Claude Code.
 
 ---
 
