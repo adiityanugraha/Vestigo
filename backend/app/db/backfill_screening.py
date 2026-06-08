@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core import screener as screener_core
+from app.core.instruments import is_index
 from app.db.models import MarketData, ScreeningHistory
 from app.db.session import SessionLocal
 
@@ -35,6 +36,8 @@ def backfill() -> int:
         rows: list[dict] = []
 
         for ticker, bars in grouped.items():
+            if is_index(ticker):  # indeks tidak di-screen
+                continue
             # Slice 0..i; screen_bars menilai bar terakhir (= bar ke-i).
             for i in range(screener_core.MIN_BARS - 1, len(bars)):
                 window = bars[: i + 1]

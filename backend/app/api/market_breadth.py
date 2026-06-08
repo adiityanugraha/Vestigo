@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 from app.cache import redis_client
 from app.core import market_breadth as mb
+from app.core.instruments import is_index
 from app.db.models import MarketBreadth, MarketData, Stock
 from app.db.session import get_db
 
@@ -91,6 +92,8 @@ def _build_changes(db: Session, target: date_cls) -> list[mb.StockChange]:
 
     changes: list[mb.StockChange] = []
     for ticker, bars in by_ticker.items():
+        if is_index(ticker):  # indeks tidak dihitung di breadth saham
+            continue
         # Cari bar pada tanggal target + bar tepat sebelumnya.
         idx = next((i for i, b in enumerate(bars) if b.date == target), None)
         if idx is None or idx == 0:

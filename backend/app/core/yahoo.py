@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from app.core.instruments import INDEX_SYMBOLS
+
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 
 DEFAULT_RANGE = "6mo"
@@ -53,6 +55,17 @@ class YahooFetchError(RuntimeError):
 def normalize_idx_symbol(symbol: str) -> str:
     normalized = symbol.strip().upper()
     return normalized if normalized.endswith(".JK") else f"{normalized}.JK"
+
+
+def to_yahoo_symbol(ticker: str) -> str:
+    """Petakan ticker internal -> simbol Yahoo.
+
+    Indeks (mis. IHSG) -> simbol khusus (^JKSE); saham biasa -> sufiks .JK.
+    """
+    normalized = ticker.strip().upper()
+    if normalized in INDEX_SYMBOLS:
+        return INDEX_SYMBOLS[normalized]
+    return normalize_idx_symbol(normalized)
 
 
 def _is_valid(value: object) -> bool:
@@ -122,7 +135,7 @@ def fetch_daily_ohlcv(
 
     Jika `client` diberikan, koneksi dipakai ulang (efisien untuk banyak ticker).
     """
-    symbol = normalize_idx_symbol(ticker)
+    symbol = to_yahoo_symbol(ticker)
     url = YAHOO_CHART_URL.format(symbol=symbol)
     params = {
         "range": range_,

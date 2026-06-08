@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.cache import redis_client
 from app.core import screener as screener_core
+from app.core.instruments import is_index
 from app.db.models import MarketData, ScreeningHistory, Stock
 from app.db.session import get_db
 from app.ml import inference
@@ -209,6 +210,8 @@ def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
 
     all_candidates: list[dict] = []
     for ticker, bars in bars_by_ticker.items():
+        if is_index(ticker):  # indeks bukan saham tradable -> dikecualikan
+            continue
         candidates = screener_core.screen_bars(ticker, bars)
         if not candidates:
             continue

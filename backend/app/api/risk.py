@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from app.cache import redis_client
 from app.core import risk_meter
+from app.core.instruments import is_index
 from app.db.models import MarketData, Stock
 from app.db.session import get_db
 
@@ -81,7 +82,9 @@ def _market_returns_by_date(db: Session) -> dict[date_cls, float]:
 
     sums: dict[date_cls, float] = {}
     counts: dict[date_cls, int] = {}
-    for bars in by_ticker.values():
+    for ticker, bars in by_ticker.items():
+        if is_index(ticker):  # jangan masukkan indeks ke proxy pasar
+            continue
         for i in range(1, len(bars)):
             prev_close = bars[i - 1].close
             cur_close = bars[i].close

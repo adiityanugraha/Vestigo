@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.cache import redis_client
 from app.core import composite_score as cs
 from app.core import indicators
+from app.core.instruments import is_index
 from app.db.models import MarketData, Stock
 from app.db.session import get_db
 from app.ml import inference
@@ -132,6 +133,8 @@ def run_ranking(db: Session, limit: int, use_ml: bool) -> dict:
 
     scored: list[dict] = []
     for ticker, bars in bars_by_ticker.items():
+        if is_index(ticker):  # indeks = konteks, bukan kandidat ranking
+            continue
         if len(bars) < MIN_BARS:
             continue
         probability_up = _predict_up(bars) if use_ml else None

@@ -97,4 +97,6 @@ IDX_STOCKS: list[tuple[str, str, str]] = [
     ("AALI", "Astra Agro Lestari", "Infrastructure & Agri"),
     ("LSIP", "PP London Sumatra Indonesia", "Infrastructure & Agri"),
     ("TAPG", "Triputra Agro Persada", "Infrastructure & Agri"),
+    # --- Indeks (konteks pasar; dikecualikan dari screener/ranking/breadth) ---
+    ("IHSG", "Indeks Harga Saham Gabungan", "Index"),
 ]
