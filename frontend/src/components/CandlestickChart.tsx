@@ -9,7 +9,7 @@ import {
   type IChartApi,
   type UTCTimestamp,
 } from "lightweight-charts";
-import { fetchDailyOhlcv } from "@/lib/fetchData";
+import { getMarketData } from "@/lib/api";
 
 type CandlestickChartProps = {
   symbol: string;
@@ -69,19 +69,27 @@ export function CandlestickChart({ symbol }: CandlestickChartProps) {
     chartRef.current = chart;
     setState({ status: "loading", error: null });
 
-    fetchDailyOhlcv(symbol, { range: "1y" })
-      .then((bars) => {
+    getMarketData(symbol)
+      .then((response) => {
         if (ignore) {
           return;
         }
 
-        const chartData: CandlestickData[] = bars.map((bar) => ({
-          time: toUtcTimestamp(bar.date),
-          open: bar.open,
-          high: bar.high,
-          low: bar.low,
-          close: bar.close,
-        }));
+        const chartData: CandlestickData[] = response.bars
+          .filter(
+            (bar) =>
+              bar.open !== null &&
+              bar.high !== null &&
+              bar.low !== null &&
+              bar.close !== null,
+          )
+          .map((bar) => ({
+            time: toUtcTimestamp(bar.date),
+            open: bar.open as number,
+            high: bar.high as number,
+            low: bar.low as number,
+            close: bar.close as number,
+          }));
 
         series.setData(chartData);
         chart.timeScale().fitContent();

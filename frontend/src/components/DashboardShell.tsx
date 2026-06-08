@@ -57,8 +57,8 @@ export function DashboardShell({
 
             <div className="mt-auto rounded-lg border border-white/10 bg-white/[0.04] p-4">
               <p className="text-xs text-slate-400">Mode</p>
-              <p className="mt-1 text-sm font-medium text-slate-100">
-                No-backend phase
+              <p className="mt-1 text-sm font-medium text-emerald-300">
+                Phase 2 · REST API
               </p>
             </div>
           </div>

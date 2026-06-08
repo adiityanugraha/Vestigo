@@ -339,7 +339,7 @@ export function BacktestPanel() {
 
       <p className="text-xs text-slate-500">
         Snapshot pre-computed offline (Jupyter / script). Winrate &amp; return
-        tidak dihitung live — sesuai blueprint Phase 1.
+        tidak dihitung live
       </p>
     </div>
   );

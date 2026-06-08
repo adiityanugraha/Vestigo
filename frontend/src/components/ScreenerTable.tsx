@@ -1,20 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { PredictedScreenerCandidate } from "@/lib/predictionPipeline";
+
+// Baris screener sederhana (dipetakan dari respons /api/screener backend).
+export type ScreenerRow = {
+  symbol: string;
+  strategy: string;
+  probabilityUp: number;
+  entry: number;
+  stopLoss: number;
+  takeProfit: number;
+  exit: number;
+  value: number;
+};
 
 type ScreenerTableProps = {
   isLoading?: boolean;
   onSelectSymbol: (symbol: string) => void;
   title: string;
-  rows: PredictedScreenerCandidate[];
+  rows: ScreenerRow[];
   selectedSymbol: string;
 };
 
 type SortDirection = "asc" | "desc";
 type SortKey =
   | "symbol"
-  | "probability"
+  | "probabilityUp"
   | "entry"
   | "stopLoss"
   | "takeProfit"
@@ -28,7 +39,7 @@ type SortState = {
 
 const columns: Array<{ key: SortKey; label: string; align?: "right" }> = [
   { key: "symbol", label: "Symbol" },
-  { key: "probability", label: "Prob", align: "right" },
+  { key: "probabilityUp", label: "Prob", align: "right" },
   { key: "entry", label: "Entry", align: "right" },
   { key: "stopLoss", label: "SL", align: "right" },
   { key: "takeProfit", label: "TP", align: "right" },
@@ -45,7 +56,7 @@ export function ScreenerTable({
 }: ScreenerTableProps) {
   const [sort, setSort] = useState<SortState>({
     direction: "desc",
-    key: "probability",
+    key: "probabilityUp",
   });
   const sortedRows = useMemo(
     () => [...rows].sort((a, b) => compareRows(a, b, sort)),
@@ -59,6 +70,8 @@ export function ScreenerTable({
         current.key === key && current.direction === "desc" ? "asc" : "desc",
     }));
   }
+
+  const selectedBare = selectedSymbol.replace(/\.JK$/i, "");
 
   return (
     <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
@@ -112,20 +125,20 @@ export function ScreenerTable({
             {!isLoading && rows.length === 0 && (
               <tr>
                 <td className="px-5 py-5 text-slate-400" colSpan={columns.length}>
-                  No candidates match the current strict strategy filters.
+                  Tidak ada kandidat yang lolos filter strategi hari ini.
                 </td>
               </tr>
             )}
             {!isLoading &&
               sortedRows.map((row) => {
-                const isSelected = row.current.symbol === selectedSymbol;
+                const isSelected = row.symbol === selectedBare;
 
                 return (
                   <tr
                     className={`text-slate-200 transition-colors hover:bg-white/[0.04] ${
                       isSelected ? "bg-sky-400/10" : ""
                     }`}
-                    key={`${row.current.symbol}-${row.strategy}`}
+                    key={`${row.symbol}-${row.strategy}`}
                   >
                     <td className="px-5 py-4 font-semibold text-white">
                       <button
@@ -135,31 +148,21 @@ export function ScreenerTable({
                             : "text-white hover:bg-white/10"
                         }`}
                         onClick={() => {
-                          onSelectSymbol(row.current.symbol);
+                          onSelectSymbol(row.symbol);
                         }}
                         type="button"
                       >
-                        {row.current.symbol}
+                        {row.symbol}
                       </button>
                     </td>
                     <td className="px-5 py-4 text-right text-emerald-300">
-                      {(row.prediction.probabilityUp * 100).toFixed(1)}%
+                      {(row.probabilityUp * 100).toFixed(1)}%
                     </td>
-                    <td className="px-5 py-4 text-right">
-                      {formatPrice(row.levels.entry)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {formatPrice(row.levels.stopLoss)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {formatPrice(row.levels.takeProfit)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {formatPrice(row.levels.exit)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {formatCompact(row.value)}
-                    </td>
+                    <td className="px-5 py-4 text-right">{formatPrice(row.entry)}</td>
+                    <td className="px-5 py-4 text-right">{formatPrice(row.stopLoss)}</td>
+                    <td className="px-5 py-4 text-right">{formatPrice(row.takeProfit)}</td>
+                    <td className="px-5 py-4 text-right">{formatPrice(row.exit)}</td>
+                    <td className="px-5 py-4 text-right">{formatCompact(row.value)}</td>
                   </tr>
                 );
               })}
@@ -181,13 +184,9 @@ function formatCompact(value: number): string {
   }).format(value);
 }
 
-function compareRows(
-  a: PredictedScreenerCandidate,
-  b: PredictedScreenerCandidate,
-  sort: SortState,
-): number {
-  const first = getSortValue(a, sort.key);
-  const second = getSortValue(b, sort.key);
+function compareRows(a: ScreenerRow, b: ScreenerRow, sort: SortState): number {
+  const first = a[sort.key];
+  const second = b[sort.key];
   const multiplier = sort.direction === "asc" ? 1 : -1;
 
   if (typeof first === "string" && typeof second === "string") {
@@ -195,28 +194,6 @@ function compareRows(
   }
 
   return (Number(first) - Number(second)) * multiplier;
-}
-
-function getSortValue(
-  row: PredictedScreenerCandidate,
-  key: SortKey,
-): number | string {
-  switch (key) {
-    case "symbol":
-      return row.current.symbol;
-    case "probability":
-      return row.prediction.probabilityUp;
-    case "entry":
-      return row.levels.entry;
-    case "stopLoss":
-      return row.levels.stopLoss;
-    case "takeProfit":
-      return row.levels.takeProfit;
-    case "exit":
-      return row.levels.exit;
-    case "value":
-      return row.value;
-  }
 }
 
 function getAriaSort(key: SortKey, sort: SortState) {

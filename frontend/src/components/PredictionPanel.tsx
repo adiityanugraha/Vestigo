@@ -1,75 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { runPredictionPipeline, type PredictionPipelineResult } from "@/lib/predictionPipeline";
-import { IDX_WATCHLIST } from "@/lib/watchlist";
-import { ScreenerTable } from "./ScreenerTable";
-
-type PredictionState =
-  | { status: "loading"; result: null; error: null }
-  | { status: "ready"; result: PredictionPipelineResult; error: null }
-  | { status: "error"; result: null; error: string };
+import { getScreener, type ScreenerCandidate } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
+import { CachedBadge, CardError } from "./CardStatus";
+import { ScreenerTable, type ScreenerRow } from "./ScreenerTable";
 
 type PredictionPanelProps = {
   onSelectSymbol: (symbol: string) => void;
   selectedSymbol: string;
 };
 
-export function PredictionPanel({
-  onSelectSymbol,
-  selectedSymbol,
-}: PredictionPanelProps) {
-  const [state, setState] = useState<PredictionState>({
-    status: "loading",
-    result: null,
-    error: null,
-  });
+function toRow(candidate: ScreenerCandidate): ScreenerRow {
+  return {
+    symbol: candidate.ticker,
+    strategy: candidate.strategy,
+    probabilityUp: candidate.prediction?.probability_up ?? 0,
+    entry: candidate.levels.entry,
+    stopLoss: candidate.levels.stop_loss,
+    takeProfit: candidate.levels.take_profit,
+    exit: candidate.levels.exit,
+    value: candidate.value,
+  };
+}
 
-  function runPipeline() {
-    setState({ status: "loading", result: null, error: null });
+export function PredictionPanel({ onSelectSymbol, selectedSymbol }: PredictionPanelProps) {
+  const { status, data, error, reload } = useApi(() => getScreener(5, true), []);
 
-    return runPredictionPipeline(IDX_WATCHLIST)
-      .then((result) => {
-        setState({ status: "ready", result, error: null });
-      })
-      .catch((error: unknown) => {
-        setState({
-          status: "error",
-          result: null,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Prediction pipeline failed",
-        });
-      });
-  }
-
-  useEffect(() => {
-    let ignore = false;
-
-    runPredictionPipeline(IDX_WATCHLIST)
-      .then((result) => {
-        if (!ignore) {
-          setState({ status: "ready", result, error: null });
-        }
-      })
-      .catch((error: unknown) => {
-        if (!ignore) {
-          setState({
-            status: "error",
-            result: null,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Prediction pipeline failed",
-          });
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const bsjp = data ? data.bsjp.map(toRow) : [];
+  const bpjs = data ? data.bpjs.map(toRow) : [];
 
   return (
     <section className="flex flex-col gap-6">
@@ -78,74 +36,47 @@ export function PredictionPanel({
           <div>
             <h2 className="text-base font-semibold text-white">ML Screener</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Data, indicators, ONNX inference, ranking
+              Dihitung server-side: data, indikator, ONNX inference, ranking
             </p>
           </div>
-          <span className="rounded-md border border-white/10 px-3 py-1 text-xs font-medium text-slate-300">
-            {state.status}
-          </span>
+          <div className="flex items-center gap-2">
+            {data && <CachedBadge cached={data.cached} />}
+            <span className="rounded-md border border-white/10 px-3 py-1 text-xs font-medium text-slate-300">
+              {status}
+            </span>
+          </div>
         </div>
 
-        {state.status === "loading" && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-4">
-            {["Market data", "Indicators", "ONNX model", "Ranking"].map(
-              (label) => (
-                <div
-                  className="h-20 rounded-lg border border-white/10 bg-slate-950/60 p-4"
-                  key={label}
-                >
-                  <p className="text-xs text-slate-500">{label}</p>
-                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full w-2/3 animate-pulse rounded-full bg-sky-400/70" />
-                  </div>
-                </div>
-              ),
-            )}
+        {status === "error" && (
+          <div className="mt-5">
+            <CardError message={error} onRetry={reload} />
           </div>
         )}
 
-        {state.status === "error" && (
-          <div className="mt-5 rounded-lg border border-rose-400/30 bg-rose-500/10 p-4">
-            <p className="text-sm font-medium text-rose-200">
-              Pipeline failed
-            </p>
-            <p className="mt-1 text-sm text-rose-100/80">{state.error}</p>
-            <button
-              className="mt-4 rounded-lg border border-rose-300/30 px-3 py-2 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-400/10"
-              onClick={() => {
-                void runPipeline();
-              }}
-              type="button"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {state.status === "ready" && (
+        {status === "ready" && data && (
           <div className="mt-4 grid gap-3 text-sm text-slate-300 sm:grid-cols-4">
-            <p>{state.result.fetchedSymbols} symbols fetched</p>
-            <p>{state.result.predictedSymbols} ONNX scored</p>
-            <p>{state.result.bsjp.length} BSJP ranked</p>
-            <p>{state.result.bpjs.length} BPJS ranked</p>
+            <p>{data.universe} saham di universe</p>
+            <p>{data.screened} kandidat lolos</p>
+            <p>{data.bsjp.length} BSJP ranked</p>
+            <p>{data.bpjs.length} BPJS ranked</p>
           </div>
         )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ScreenerTable
-          isLoading={state.status === "loading"}
+          isLoading={status === "loading"}
           onSelectSymbol={onSelectSymbol}
           selectedSymbol={selectedSymbol}
           title="Top 5 BSJP"
-          rows={state.status === "ready" ? state.result.bsjp : []}
+          rows={bsjp}
         />
         <ScreenerTable
-          isLoading={state.status === "loading"}
+          isLoading={status === "loading"}
           onSelectSymbol={onSelectSymbol}
           selectedSymbol={selectedSymbol}
           title="Top 5 BPJS"
-          rows={state.status === "ready" ? state.result.bpjs : []}
+          rows={bpjs}
         />
       </div>
     </section>
