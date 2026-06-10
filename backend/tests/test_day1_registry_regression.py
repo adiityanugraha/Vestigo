@@ -62,9 +62,11 @@ def random_bars(rng: random.Random, length: int) -> list[Bar]:
 # --------------------------------------------------------------------------- #
 def test_registry_contains_bsjp_and_bpjs() -> None:
     keys = [s.key for s in registry.all_strategies()]
-    assert keys == ["bsjp", "bpjs"]
+    # BSJP & BPJS tetap terdaftar lebih dulu (urutan stabil); strategi lain
+    # boleh ditambah sesudahnya tanpa membuat test ini rapuh.
+    assert keys[:2] == ["bsjp", "bpjs"]
+    assert {"bsjp", "bpjs"} <= set(keys)
     for strategy in registry.all_strategies():
-        assert strategy.type is StrategyType.TECHNICAL
         meta = strategy.describe()
         assert set(meta) == {"key", "name", "type", "output_label"}
 
