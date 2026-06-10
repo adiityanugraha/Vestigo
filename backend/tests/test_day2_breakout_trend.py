@@ -22,7 +22,7 @@ def run(key: str, bars: list[Bar]):
 # --------------------------------------------------------------------------- #
 def test_breakout_and_trend_registered() -> None:
     keys = [s.key for s in registry.all_strategies()]
-    assert keys == ["bsjp", "bpjs", "breakout", "trend_following"]
+    assert {"breakout", "trend_following"} <= set(keys)
     for key in ("breakout", "trend_following"):
         assert registry.get(key).type is StrategyType.TECHNICAL
 

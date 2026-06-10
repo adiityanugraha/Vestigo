@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import date as date_cls
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -24,7 +24,9 @@ from sqlalchemy.orm import Session
 
 from app.cache import redis_client
 from app.core import screener as screener_core
+from app.core import strategy_screener
 from app.core.instruments import is_index
+from app.core.strategies import registry
 from app.db.models import MarketData, ScreeningHistory, Stock
 from app.db.session import get_db
 from app.ml import inference
@@ -33,6 +35,7 @@ from app.ml.features import build_feature_vector
 router = APIRouter(prefix="/api/screener", tags=["screener"])
 
 CACHE_KEY = "screener:result:limit={limit}:ml={ml}"
+STRATEGY_CACHE_KEY = "screener:strategy={strategy}:limit={limit}"
 
 
 # --------------------------------------------------------------------------- #
@@ -93,6 +96,32 @@ class ScreenerResponse(BaseModel):
     cached: bool
     bsjp: list[CandidateOut]
     bpjs: list[CandidateOut]
+
+
+# --- Mode strategi tunggal (Phase 3): /api/screener?strategy={name} ---------- #
+class StrategyCandidateOut(BaseModel):
+    ticker: str
+    name: str | None = None
+    sector: str | None = None
+    date: str
+    open: float | None = None
+    close: float | None = None
+    volume: float
+    value: float
+    matched_criteria: list[str]
+
+
+class StrategyScreenerResponse(BaseModel):
+    strategy: str
+    name: str
+    type: str
+    output_label: str
+    generated_at: str
+    universe: int
+    evaluated: int
+    passed: int
+    cached: bool
+    candidates: list[StrategyCandidateOut]
 
 
 # --------------------------------------------------------------------------- #
@@ -240,15 +269,52 @@ def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
     }
 
 
-@router.get("", response_model=ScreenerResponse)
+def run_strategy_screener(db: Session, strategy: str, limit: int) -> dict:
+    """Mode strategi tunggal (Phase 3): jalankan 1 strategi dari registry.
+
+    Mengembalikan kandidat lolos + matched_criteria. KeyError -> caller HTTP 404.
+    """
+    result = strategy_screener.screen_one_strategy(db, strategy, limit=limit)
+    result["generated_at"] = datetime.now(timezone.utc).isoformat()
+    result["cached"] = False
+    return result
+
+
+@router.get("", response_model=None)
 def get_screener(
     limit: int = Query(5, ge=1, le=50),
     use_ml: bool = Query(True),
     refresh: bool = Query(False),
+    strategy: str | None = Query(
+        None,
+        description=(
+            "Phase 3: jalankan SATU strategi dari registry (mis. breakout, "
+            "trend_following). Kosong = jalur Phase 2 (top-N BSJP & BPJS + ML)."
+        ),
+    ),
     db: Session = Depends(get_db),
 ) -> dict:
-    cache_key = CACHE_KEY.format(limit=limit, ml=use_ml)
+    # --- Phase 3: mode strategi tunggal --------------------------------------- #
+    if strategy is not None:
+        strategy_key = strategy.strip().lower()
+        if registry.get(strategy_key) is None:
+            available = [s.key for s in registry.all_strategies()]
+            raise HTTPException(
+                status_code=404,
+                detail=f"Strategi '{strategy}' tidak dikenal. Tersedia: {available}",
+            )
+        cache_key = STRATEGY_CACHE_KEY.format(strategy=strategy_key, limit=limit)
+        if not refresh:
+            cached = redis_client.cache_get_json(cache_key)
+            if cached is not None:
+                cached["cached"] = True
+                return cached
+        result = run_strategy_screener(db, strategy_key, limit=limit)
+        redis_client.cache_set_json(cache_key, result, ttl=redis_client.TTL_RANKING)
+        return result
 
+    # --- Phase 2: jalur lama (tidak berubah) ---------------------------------- #
+    cache_key = CACHE_KEY.format(limit=limit, ml=use_ml)
     if not refresh:
         cached = redis_client.cache_get_json(cache_key)
         if cached is not None:
