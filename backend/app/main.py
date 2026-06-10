@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    fundamentals,
     health,
     history,
     market_breadth,
@@ -66,6 +67,7 @@ app.add_middleware(
 # Routers
 app.include_router(health.router)
 app.include_router(strategies.router)
+app.include_router(fundamentals.router)
 app.include_router(screener.router)
 app.include_router(market_data.router)
 app.include_router(ranking.router)
