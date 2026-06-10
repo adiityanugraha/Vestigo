@@ -29,3 +29,6 @@ numpy==1.26.4             # <2 untuk kompatibilitas onnxruntime
 
 # --- HTTP client (fetch Yahoo Finance server-side, dipakai mulai Day 3) ---
 httpx==0.28.1
+
+# --- Dev / testing (Phase 3 Day 1: regression test Strategy Registry) ---
+pytest==9.0.3
