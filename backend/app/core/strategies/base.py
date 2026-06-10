@@ -23,8 +23,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, ClassVar
+from typing import ClassVar
 
+from app.core.fundamentals import FundamentalView
 from app.core.screener import OhlcvBar
 
 
@@ -38,12 +39,15 @@ class StockData:
     """Snapshot satu saham yang dinilai strategi.
 
     bars         : OHLCV harian urut kronologis (terakhir = hari berjalan).
-    fundamentals : data laporan keuangan + metrik turunan (diisi mulai Day 4).
+    fundamentals : FundamentalView (raw + derived + growth) bila tersedia; None
+                   untuk saham tanpa data fundamental. Strategi teknikal
+                   mengabaikannya; strategi fundamental mengembalikan
+                   NOT_EVALUATED bila None.
     """
 
     ticker: str
     bars: list[OhlcvBar]
-    fundamentals: dict[str, Any] | None = None
+    fundamentals: FundamentalView | None = None
 
 
 @dataclass(frozen=True)

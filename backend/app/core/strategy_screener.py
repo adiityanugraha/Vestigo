@@ -13,10 +13,11 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.fundamentals import FundamentalView, build_fundamental_view
 from app.core.instruments import is_index
 from app.core.strategies import registry
 from app.core.strategies.base import StockData
-from app.db.models import MarketData, Stock
+from app.db.models import Fundamental, MarketData, Stock
 
 
 def load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
@@ -26,6 +27,29 @@ def load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
     for row in rows:
         grouped.setdefault(row.ticker, []).append(row)
     return grouped
+
+
+def load_fundamentals_by_ticker(db: Session) -> dict[str, list[Fundamental]]:
+    """Semua baris fundamentals dikelompokkan per ticker."""
+    rows = db.scalars(select(Fundamental))
+    grouped: dict[str, list[Fundamental]] = {}
+    for row in rows:
+        grouped.setdefault(row.ticker, []).append(row)
+    return grouped
+
+
+def build_view_for(ticker: str, bars: list[MarketData], rows: list[Fundamental]) -> FundamentalView | None:
+    """FundamentalView untuk satu ticker (None bila tak ada baris fundamentals).
+
+    Metrik harga-sensitif dihitung dari close TERBARU market_data — konsisten
+    dengan fundamental_derived (Day 5), tanpa bergantung job derived sudah jalan.
+    """
+    if not rows or not bars:
+        return None
+    latest = bars[-1]
+    return build_fundamental_view(
+        ticker, rows, close=latest.close, as_of=latest.date, price_bars=bars
+    )
 
 
 def _candidate(ticker: str, bars: list[MarketData], matched: list[str], stock: Stock | None) -> dict:
@@ -57,6 +81,7 @@ def screen_one_strategy(db: Session, strategy_key: str, limit: int | None = None
         raise KeyError(strategy_key)
 
     bars_by_ticker = load_bars_by_ticker(db)
+    funds_by_ticker = load_fundamentals_by_ticker(db)
     stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
 
     candidates: list[dict] = []
@@ -64,7 +89,8 @@ def screen_one_strategy(db: Session, strategy_key: str, limit: int | None = None
     for ticker, bars in bars_by_ticker.items():
         if is_index(ticker):
             continue
-        result = strategy.run(StockData(ticker=ticker, bars=bars))
+        view = build_view_for(ticker, bars, funds_by_ticker.get(ticker, []))
+        result = strategy.run(StockData(ticker=ticker, bars=bars, fundamentals=view))
         if not result.evaluated:
             continue
         evaluated += 1

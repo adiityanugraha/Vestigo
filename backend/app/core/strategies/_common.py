@@ -55,3 +55,27 @@ def build_tech_snapshot(bars: list[OhlcvBar]) -> TechSnapshot | None:
         _closes=closes,
         _volumes=volumes,
     )
+
+
+def volume_ma20(bars: list[OhlcvBar]) -> float | None:
+    """Volume MA20 dari bar (None bila < 20 bar). Dipakai strategi fundamental
+    yang punya syarat likuiditas minimum."""
+    if len(bars) < 20:
+        return None
+    return indicators.simple_moving_average([float(bar.volume) for bar in bars], 20)
+
+
+# --------------------------------------------------------------------------- #
+# Komparator None-safe — kriteria fundamental sering bernilai None (data Yahoo
+# tak lengkap). None selalu mengevaluasi ke False (tak bisa dikonfirmasi lolos).
+# --------------------------------------------------------------------------- #
+def ge(value: float | None, threshold: float) -> bool:
+    return value is not None and value >= threshold
+
+
+def gt(value: float | None, threshold: float) -> bool:
+    return value is not None and value > threshold
+
+
+def lt(value: float | None, threshold: float) -> bool:
+    return value is not None and value < threshold

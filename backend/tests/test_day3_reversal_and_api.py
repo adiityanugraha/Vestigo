@@ -24,8 +24,10 @@ def run(key: str, bars: list[Bar]):
 # --------------------------------------------------------------------------- #
 def test_five_technical_strategies_registered() -> None:
     keys = [s.key for s in registry.all_strategies()]
-    assert keys == ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"]
-    assert all(s.type is StrategyType.TECHNICAL for s in registry.all_strategies())
+    # 5 strategi teknikal mendahului strategi fundamental (urutan stabil).
+    assert keys[:5] == ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"]
+    technical = registry.by_type(StrategyType.TECHNICAL)
+    assert [s.key for s in technical] == keys[:5]
 
 
 # --------------------------------------------------------------------------- #
@@ -97,7 +99,7 @@ def test_api_list_strategies() -> None:
     assert resp.status_code == 200
     data = resp.json()
     keys = [s["key"] for s in data]
-    assert keys == ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"]
+    assert keys[:5] == ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"]
     for item in data:
         assert set(item) == {"key", "name", "type", "output_label"}
         assert item["type"] in ("technical", "fundamental")
