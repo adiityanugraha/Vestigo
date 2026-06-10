@@ -152,3 +152,81 @@ class UserWatchlist(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class Fundamental(Base):
+    """Data laporan keuangan per periode (Phase 3 Day 4).
+
+    Satu baris per (ticker, period, report_type). report_type:
+      - ANNUAL : laporan tahunan historis (revenue & net_income andal dari Yahoo
+                 incomeStatementHistory; dipakai growth YoY / 3-tahun di Day 5).
+      - TTM    : snapshot trailing-twelve-month (agregat neraca/profitabilitas:
+                 gross_profit, cash, total_debt, roe, eps, dps, common_equity).
+      - QUARTER: cadangan bila sumber kuartalan ditambah kemudian.
+
+    Field yang tidak tersedia gratis dari Yahoo untuk IDX dibiarkan None
+    (income_from_operations & gross_profit per-tahun, dividend_streak) — lihat
+    catatan keterbatasan di data/fundamentals_fetch.py. Berubah lambat
+    (kuartalan); refresh harga-sensitif ada di FundamentalDerived.
+    """
+
+    __tablename__ = "fundamentals"
+    __table_args__ = (
+        UniqueConstraint(
+            "ticker", "period", "report_type", name="uq_fundamentals_ticker_period_type"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    period: Mapped[str] = mapped_column(String(16), index=True)  # "2025" | "TTM"
+    report_type: Mapped[str] = mapped_column(String(8), index=True)  # ANNUAL|TTM|QUARTER
+
+    revenue: Mapped[float | None] = mapped_column(Float)
+    net_income: Mapped[float | None] = mapped_column(Float)
+    income_from_operations: Mapped[float | None] = mapped_column(Float)
+    gross_profit: Mapped[float | None] = mapped_column(Float)
+    common_equity: Mapped[float | None] = mapped_column(Float)
+    cash_equivalents: Mapped[float | None] = mapped_column(Float)
+    total_debt: Mapped[float | None] = mapped_column(Float)
+    roe: Mapped[float | None] = mapped_column(Float)
+    eps: Mapped[float | None] = mapped_column(Float)
+    dps: Mapped[float | None] = mapped_column(Float)
+    dividend_streak: Mapped[int | None] = mapped_column(Integer)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class FundamentalDerived(Base):
+    """Metrik fundamental yang BERGANTUNG HARGA — refresh harian (Day 5).
+
+    Dipisah dari Fundamental karena PE/PBV/MarketCap/DividendYield berubah tiap
+    hari mengikuti harga, sedangkan laporan keuangan murni hanya berubah per
+    kuartal. Satu baris per (ticker, date).
+    """
+
+    __tablename__ = "fundamental_derived"
+    __table_args__ = (
+        UniqueConstraint(
+            "ticker", "date", name="uq_fundamental_derived_ticker_date"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, index=True)
+
+    pe_annualised: Mapped[float | None] = mapped_column(Float)
+    pbv: Mapped[float | None] = mapped_column(Float)
+    market_cap: Mapped[float | None] = mapped_column(Float)
+    dividend_yield: Mapped[float | None] = mapped_column(Float)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
