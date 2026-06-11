@@ -26,6 +26,7 @@ from app.api import (
     screener,
     stock_report,
     strategies,
+    strategy_matrix,
     support_resistance,
 )
 from app.core.config import get_settings
@@ -67,6 +68,7 @@ app.add_middleware(
 # Routers
 app.include_router(health.router)
 app.include_router(strategies.router)
+app.include_router(strategy_matrix.router)
 app.include_router(fundamentals.router)
 app.include_router(screener.router)
 app.include_router(market_data.router)
