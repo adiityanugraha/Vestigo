@@ -261,6 +261,77 @@ export type MarketDataResponse = {
 };
 
 // --------------------------------------------------------------------------- //
+// Tipe Phase 3 — Multi-Strategy Engine
+// --------------------------------------------------------------------------- //
+export type StrategyMeta = {
+  key: string;
+  name: string;
+  type: "technical" | "fundamental";
+  output_label: string;
+};
+
+export type StrategyCandidate = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  date: string;
+  open: number | null;
+  close: number | null;
+  volume: number;
+  value: number;
+  matched_criteria: string[];
+};
+
+export type StrategyScreenerResponse = {
+  strategy: string;
+  name: string;
+  type: string;
+  output_label: string;
+  generated_at: string;
+  universe: number;
+  evaluated: number;
+  passed: number;
+  cached: boolean;
+  candidates: StrategyCandidate[];
+};
+
+export type StrategyBucket = {
+  strategy: string;
+  name: string;
+  type: string;
+  output_label: string;
+  evaluated: number;
+  passed: number;
+  candidates: StrategyCandidate[];
+};
+
+export type AllStrategiesResponse = {
+  generated_at: string;
+  universe: number;
+  persisted: number;
+  cached: boolean;
+  strategies: StrategyBucket[];
+};
+
+export type MatrixRow = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  results: Record<string, boolean | null>;
+  passed_count: number;
+  passed_strategies: string[];
+};
+
+export type StrategyMatrixResponse = {
+  date: string | null;
+  generated_at: string;
+  cached: boolean;
+  universe_evaluated: number;
+  strategies: StrategyMeta[];
+  matrix: MatrixRow[];
+};
+
+// --------------------------------------------------------------------------- //
 // Endpoint
 // --------------------------------------------------------------------------- //
 export function getScreener(limit = 5, useMl = true): Promise<ScreenerResponse> {
@@ -298,4 +369,24 @@ export function getHistory(params?: {
 
 export function getMarketData(symbol: string, limit?: number): Promise<MarketDataResponse> {
   return apiGet(`/api/market-data/${bareTicker(symbol)}`, limit ? { limit } : undefined);
+}
+
+// --- Phase 3: Multi-Strategy Engine --------------------------------------- //
+export function getStrategies(): Promise<StrategyMeta[]> {
+  return apiGet("/api/strategies");
+}
+
+export function getStrategyScreener(
+  strategy: string,
+  limit = 10,
+): Promise<StrategyScreenerResponse> {
+  return apiGet("/api/screener", { strategy, limit });
+}
+
+export function getScreenerAll(limit = 10): Promise<AllStrategiesResponse> {
+  return apiGet("/api/screener/all", { limit });
+}
+
+export function getStrategyMatrix(minPassed = 1): Promise<StrategyMatrixResponse> {
+  return apiGet("/api/strategy-matrix", { min_passed: minPassed });
 }
