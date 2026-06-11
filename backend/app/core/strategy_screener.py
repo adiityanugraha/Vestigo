@@ -39,6 +39,28 @@ def load_fundamentals_by_ticker(db: Session) -> dict[str, list[Fundamental]]:
     return grouped
 
 
+def evaluate_ticker(
+    db: Session, ticker: str
+) -> tuple[list[MarketData], FundamentalView | None, dict] | None:
+    """Jalankan SEMUA strategi untuk SATU ticker (live, selalu segar).
+
+    Mengembalikan (bars, view, results) di mana results = {strategy_key:
+    StrategyResult}. None bila ticker tak punya bar. Dipakai /api/explain &
+    /api/why (Day 10) — tak bergantung strategy_results sudah ter-persist.
+    """
+    bars = list(
+        db.scalars(
+            select(MarketData).where(MarketData.ticker == ticker).order_by(MarketData.date)
+        )
+    )
+    if not bars:
+        return None
+    rows = list(db.scalars(select(Fundamental).where(Fundamental.ticker == ticker)))
+    view = build_view_for(ticker, bars, rows)
+    results = registry.run_all(StockData(ticker=ticker, bars=bars, fundamentals=view))
+    return bars, view, results
+
+
 def build_view_for(ticker: str, bars: list[MarketData], rows: list[Fundamental]) -> FundamentalView | None:
     """FundamentalView untuk satu ticker (None bila tak ada baris fundamentals).
 

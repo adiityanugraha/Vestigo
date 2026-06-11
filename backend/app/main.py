@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    explain,
     fundamentals,
     health,
     history,
@@ -29,6 +30,7 @@ from app.api import (
     strategy_matrix,
     strength,
     support_resistance,
+    why,
 )
 from app.core.config import get_settings
 from app.scheduler import scheduler as scheduler_module
@@ -71,6 +73,8 @@ app.include_router(health.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
+app.include_router(explain.router)
+app.include_router(why.router)
 app.include_router(fundamentals.router)
 app.include_router(screener.router)
 app.include_router(market_data.router)
