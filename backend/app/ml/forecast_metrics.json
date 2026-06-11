@@ -1,0 +1,201 @@
+{
+  "model": "CalibratedClassifierCV(RandomForest, sigmoid)",
+  "target": "P(close[t+h] > close[t])",
+  "features": [
+    "return_1d",
+    "return_5d",
+    "ma5_ratio",
+    "ma20_ratio",
+    "volume_ratio_20",
+    "value_log",
+    "rsi_14",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "bb_position",
+    "atr_pct",
+    "vwap_ratio"
+  ],
+  "lookback_bars": 60,
+  "horizons": [
+    1,
+    5,
+    20
+  ],
+  "split_date": "2026-01-06",
+  "embargo_days": 30,
+  "confidence_thresholds": {
+    "medium": 0.07,
+    "high": 0.18
+  },
+  "per_horizon": {
+    "1d": {
+      "horizon_days": 1,
+      "train_rows": 23988,
+      "test_rows": 6399,
+      "base_rate_test": 0.4121,
+      "accuracy": 0.5904,
+      "precision": 0.5179,
+      "recall": 0.088,
+      "roc_auc": 0.5514,
+      "brier": 0.2403,
+      "calibration": [
+        {
+          "bin": "0.3-0.4",
+          "count": 2400,
+          "mean_pred": 0.3775,
+          "actual_rate": 0.3704
+        },
+        {
+          "bin": "0.4-0.5",
+          "count": 3551,
+          "mean_pred": 0.439,
+          "actual_rate": 0.4269
+        },
+        {
+          "bin": "0.5-0.6",
+          "count": 440,
+          "mean_pred": 0.5329,
+          "actual_rate": 0.5159
+        },
+        {
+          "bin": "0.6-0.7",
+          "count": 8,
+          "mean_pred": 0.6031,
+          "actual_rate": 0.625
+        }
+      ],
+      "backtest_terciles": [
+        {
+          "tercile": "low_prob",
+          "count": 2133,
+          "mean_pred": 0.375,
+          "mean_forward_return_pct": -0.158,
+          "win_rate": 0.3694
+        },
+        {
+          "tercile": "mid_prob",
+          "count": 2133,
+          "mean_pred": 0.4154,
+          "mean_forward_return_pct": -0.205,
+          "win_rate": 0.4051
+        },
+        {
+          "tercile": "high_prob",
+          "count": 2133,
+          "mean_pred": 0.4773,
+          "mean_forward_return_pct": 0.1,
+          "win_rate": 0.4618
+        }
+      ]
+    },
+    "5d": {
+      "horizon_days": 5,
+      "train_rows": 23988,
+      "test_rows": 6399,
+      "base_rate_test": 0.4176,
+      "accuracy": 0.5802,
+      "precision": 0.4874,
+      "recall": 0.1014,
+      "roc_auc": 0.528,
+      "brier": 0.2441,
+      "calibration": [
+        {
+          "bin": "0.3-0.4",
+          "count": 9,
+          "mean_pred": 0.395,
+          "actual_rate": 0.4444
+        },
+        {
+          "bin": "0.4-0.5",
+          "count": 5834,
+          "mean_pred": 0.4522,
+          "actual_rate": 0.4109
+        },
+        {
+          "bin": "0.5-0.6",
+          "count": 556,
+          "mean_pred": 0.5189,
+          "actual_rate": 0.4874
+        }
+      ],
+      "backtest_terciles": [
+        {
+          "tercile": "low_prob",
+          "count": 2133,
+          "mean_pred": 0.4295,
+          "mean_forward_return_pct": -0.763,
+          "win_rate": 0.3891
+        },
+        {
+          "tercile": "mid_prob",
+          "count": 2133,
+          "mean_pred": 0.454,
+          "mean_forward_return_pct": -0.776,
+          "win_rate": 0.4177
+        },
+        {
+          "tercile": "high_prob",
+          "count": 2133,
+          "mean_pred": 0.4903,
+          "mean_forward_return_pct": -0.241,
+          "win_rate": 0.4459
+        }
+      ]
+    },
+    "20d": {
+      "horizon_days": 20,
+      "train_rows": 23988,
+      "test_rows": 6399,
+      "base_rate_test": 0.3179,
+      "accuracy": 0.6834,
+      "precision": 0.5769,
+      "recall": 0.0147,
+      "roc_auc": 0.5552,
+      "brier": 0.2294,
+      "calibration": [
+        {
+          "bin": "0.3-0.4",
+          "count": 11,
+          "mean_pred": 0.3986,
+          "actual_rate": 0.2727
+        },
+        {
+          "bin": "0.4-0.5",
+          "count": 6336,
+          "mean_pred": 0.4372,
+          "actual_rate": 0.3158
+        },
+        {
+          "bin": "0.5-0.6",
+          "count": 52,
+          "mean_pred": 0.5059,
+          "actual_rate": 0.5769
+        }
+      ],
+      "backtest_terciles": [
+        {
+          "tercile": "low_prob",
+          "count": 2133,
+          "mean_pred": 0.4194,
+          "mean_forward_return_pct": -4.552,
+          "win_rate": 0.2724
+        },
+        {
+          "tercile": "mid_prob",
+          "count": 2133,
+          "mean_pred": 0.4319,
+          "mean_forward_return_pct": -4.592,
+          "win_rate": 0.3075
+        },
+        {
+          "tercile": "high_prob",
+          "count": 2133,
+          "mean_pred": 0.4619,
+          "mean_forward_return_pct": -3.91,
+          "win_rate": 0.3737
+        }
+      ]
+    }
+  }
+}

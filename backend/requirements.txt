@@ -32,3 +32,9 @@ httpx==0.28.1
 
 # --- Dev / testing (Phase 3 Day 1: regression test Strategy Registry) ---
 pytest==9.0.3
+
+# --- ML training (Phase 3 Day 11, OFFLINE ONLY — latih forecast_*.onnx) ---
+# Tidak dibutuhkan saat runtime/deploy (inferensi cukup onnxruntime). Install
+# hanya untuk menjalankan `python -m app.ml.train_forecast`.
+scikit-learn==1.9.0
+skl2onnx==1.20.0
