@@ -234,6 +234,34 @@ class StrategyResultRow(Base):
     )
 
 
+class Forecast(Base):
+    """Probability Forecast multi-horizon (Phase 3 Day 12).
+
+    P(return > 0) untuk horizon 1D / 5D / 20D + confidence level (LOW/MEDIUM/
+    HIGH). Satu baris per (date, ticker). Diisi GET /api/forecast/{ticker}
+    (lalu scheduler 16:15, Day 13).
+    """
+
+    __tablename__ = "forecast"
+    __table_args__ = (
+        UniqueConstraint("date", "ticker", name="uq_forecast_date_ticker"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    prob_1d: Mapped[float | None] = mapped_column(Float)
+    prob_5d: Mapped[float | None] = mapped_column(Float)
+    prob_20d: Mapped[float | None] = mapped_column(Float)
+    confidence: Mapped[str] = mapped_column(String(8))  # LOW | MEDIUM | HIGH
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class StrengthScore(Base):
     """Screener Strength Score lintas-strategi (Phase 3 Day 9).
 

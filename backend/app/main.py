@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     explain,
+    forecast,
     fundamentals,
     health,
     history,
@@ -75,6 +76,7 @@ app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
 app.include_router(explain.router)
 app.include_router(why.router)
+app.include_router(forecast.router)
 app.include_router(fundamentals.router)
 app.include_router(screener.router)
 app.include_router(market_data.router)
