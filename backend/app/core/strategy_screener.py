@@ -11,13 +11,14 @@ Indeks (IHSG) dikecualikan — bukan saham tradable.
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.core.fundamentals import FundamentalView, build_fundamental_view
 from app.core.instruments import is_index
 from app.core.strategies import registry
 from app.core.strategies.base import StockData
-from app.db.models import Fundamental, MarketData, Stock
+from app.db.models import Fundamental, MarketData, Stock, StrategyResultRow
 
 
 def load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
@@ -113,4 +114,97 @@ def screen_one_strategy(db: Session, strategy_key: str, limit: int | None = None
         "evaluated": evaluated,
         "passed": passed_count,
         "candidates": candidates,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Semua strategi sekaligus (Day 7): /api/screener/all + tabel strategy_results
+# --------------------------------------------------------------------------- #
+def _persist_strategy_results(db: Session, rows: list[dict]) -> int:
+    """Upsert hasil evaluasi (termasuk gagal) ke strategy_results, idempoten
+    per (date, ticker, strategy)."""
+    if not rows:
+        return 0
+    stmt = pg_insert(StrategyResultRow).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_strategy_results_date_ticker_strategy",
+        set_={
+            "passed": stmt.excluded.passed,
+            "matched_criteria": stmt.excluded.matched_criteria,
+            "skipped_criteria": stmt.excluded.skipped_criteria,
+        },
+    )
+    db.execute(stmt)
+    db.commit()
+    return len(rows)
+
+
+def screen_all_strategies(db: Session, limit: int | None = None, persist: bool = True) -> dict:
+    """Jalankan SEMUA strategi registry atas seluruh universe dalam satu lintasan.
+
+    Data per ticker (bar + FundamentalView) dibangun SEKALI lalu dipakai semua
+    strategi. Hasil evaluasi (pass & fail) di-persist ke strategy_results untuk
+    Strategy Matrix (Day 8) / Strength Score (Day 9) / Explain (Day 10).
+    """
+    bars_by_ticker = load_bars_by_ticker(db)
+    funds_by_ticker = load_fundamentals_by_ticker(db)
+    stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
+    strategies = registry.all_strategies()
+
+    per_strategy: dict[str, dict] = {
+        s.key: {
+            "strategy": s.key,
+            "name": s.name,
+            "type": s.type.value,
+            "output_label": s.output_label,
+            "evaluated": 0,
+            "passed": 0,
+            "candidates": [],
+        }
+        for s in strategies
+    }
+    persist_rows: list[dict] = []
+    universe = 0
+
+    for ticker, bars in bars_by_ticker.items():
+        if is_index(ticker):
+            continue
+        universe += 1
+        view = build_view_for(ticker, bars, funds_by_ticker.get(ticker, []))
+        data = StockData(ticker=ticker, bars=bars, fundamentals=view)
+        latest_date = bars[-1].date
+
+        for strategy in strategies:
+            result = strategy.run(data)
+            if not result.evaluated:
+                continue
+            bucket = per_strategy[strategy.key]
+            bucket["evaluated"] += 1
+            if result.passed:
+                bucket["passed"] += 1
+                bucket["candidates"].append(
+                    _candidate(ticker, bars, result.matched_criteria, stock_map.get(ticker))
+                )
+            persist_rows.append(
+                {
+                    "date": latest_date,
+                    "ticker": ticker,
+                    "strategy": strategy.key,
+                    "passed": result.passed,
+                    "matched_criteria": result.matched_criteria,
+                    "skipped_criteria": result.skipped_criteria,
+                }
+            )
+
+    for bucket in per_strategy.values():
+        bucket["candidates"].sort(key=lambda c: c["value"] or 0.0, reverse=True)
+        if limit is not None:
+            bucket["candidates"] = bucket["candidates"][:limit]
+
+    persisted = _persist_strategy_results(db, persist_rows) if persist else 0
+
+    return {
+        "universe": universe,
+        "persisted": persisted,
+        "strategies": list(per_strategy.values()),
     }

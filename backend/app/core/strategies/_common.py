@@ -65,6 +65,14 @@ def volume_ma20(bars: list[OhlcvBar]) -> float | None:
     return indicators.simple_moving_average([float(bar.volume) for bar in bars], 20)
 
 
+def value_ma20(bars: list[OhlcvBar]) -> float | None:
+    """MA20 nilai transaksi harian (close*volume). None bila < 20 bar."""
+    if len(bars) < 20:
+        return None
+    values = [bar.close * float(bar.volume) for bar in bars]
+    return indicators.simple_moving_average(values, 20)
+
+
 # --------------------------------------------------------------------------- #
 # Komparator None-safe — kriteria fundamental sering bernilai None (data Yahoo
 # tak lengkap). None selalu mengevaluasi ke False (tak bisa dikonfirmasi lolos).

@@ -26,10 +26,9 @@ def _bars(volume: float, n: int = 25):
 # --------------------------------------------------------------------------- #
 def test_fundamental_strategies_registered() -> None:
     keys = [s.key for s in registry.all_strategies()]
-    assert keys == [
-        "bsjp", "bpjs", "breakout", "trend_following", "potential_reversal",
-        "high_growth", "cash_rich",
-    ]
+    # high_growth & cash_rich terdaftar setelah 5 strategi teknikal
+    # (daftar lengkap 9 strategi dikunci oleh test Day 7).
+    assert keys[5:7] == ["high_growth", "cash_rich"]
     assert registry.get("high_growth").type is StrategyType.FUNDAMENTAL
     assert registry.get("cash_rich").type is StrategyType.FUNDAMENTAL
 

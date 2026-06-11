@@ -16,6 +16,7 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Date,
     DateTime,
     Float,
@@ -198,6 +199,38 @@ class Fundamental(Base):
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class StrategyResultRow(Base):
+    """Hasil evaluasi SEMUA strategi per saham per hari (Phase 3 Day 7).
+
+    Diisi GET /api/screener/all (lalu scheduler 07:30, Day 13). Satu baris per
+    (date, ticker, strategy) — termasuk yang GAGAL (passed=False) karena
+    Strategy Matrix (Day 8) butuh pass/fail lengkap. Saham yang tidak bisa
+    dievaluasi (data kurang) TIDAK disimpan. matched_criteria & skipped_criteria
+    JSONB untuk Explainable AI (Day 10).
+    """
+
+    __tablename__ = "strategy_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "date", "ticker", "strategy", name="uq_strategy_results_date_ticker_strategy"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    strategy: Mapped[str] = mapped_column(String(24), index=True)
+    passed: Mapped[bool] = mapped_column(Boolean, index=True)
+    matched_criteria: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    skipped_criteria: Mapped[list[str]] = mapped_column(JSONB, default=list)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
     )
 
 

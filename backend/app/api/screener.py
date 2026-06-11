@@ -36,6 +36,7 @@ router = APIRouter(prefix="/api/screener", tags=["screener"])
 
 CACHE_KEY = "screener:result:limit={limit}:ml={ml}"
 STRATEGY_CACHE_KEY = "screener:strategy={strategy}:limit={limit}"
+ALL_CACHE_KEY = "screener:all:limit={limit}"
 
 
 # --------------------------------------------------------------------------- #
@@ -122,6 +123,24 @@ class StrategyScreenerResponse(BaseModel):
     passed: int
     cached: bool
     candidates: list[StrategyCandidateOut]
+
+
+class StrategyBucketOut(BaseModel):
+    strategy: str
+    name: str
+    type: str
+    output_label: str
+    evaluated: int
+    passed: int
+    candidates: list[StrategyCandidateOut]
+
+
+class AllStrategiesResponse(BaseModel):
+    generated_at: str
+    universe: int
+    persisted: int
+    cached: bool
+    strategies: list[StrategyBucketOut]
 
 
 # --------------------------------------------------------------------------- #
@@ -267,6 +286,27 @@ def run_screener(db: Session, limit: int, use_ml: bool) -> dict:
         "bsjp": top("BSJP"),
         "bpjs": top("BPJS"),
     }
+
+
+@router.get("/all", response_model=AllStrategiesResponse)
+def get_screener_all(
+    limit: int = Query(10, ge=1, le=100),
+    refresh: bool = Query(False),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Jalankan SEMUA 9 strategi sekaligus + persist ke strategy_results."""
+    cache_key = ALL_CACHE_KEY.format(limit=limit)
+    if not refresh:
+        cached = redis_client.cache_get_json(cache_key)
+        if cached is not None:
+            cached["cached"] = True
+            return cached
+
+    result = strategy_screener.screen_all_strategies(db, limit=limit)
+    result["generated_at"] = datetime.now(timezone.utc).isoformat()
+    result["cached"] = False
+    redis_client.cache_set_json(cache_key, result, ttl=redis_client.TTL_RANKING)
+    return result
 
 
 def run_strategy_screener(db: Session, strategy: str, limit: int) -> dict:

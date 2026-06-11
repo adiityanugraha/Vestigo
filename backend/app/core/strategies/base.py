@@ -56,6 +56,11 @@ class StrategyResult:
     criteria: dict[str, bool] = field(default_factory=dict)
     matched_criteria: list[str] = field(default_factory=list)
     evaluated: bool = True
+    # Kriteria yang DILEWATI karena datanya secara struktural tak tersedia dari
+    # sumber gratis (mis. Income From Operations, dividend streak). Strategi
+    # dinilai atas subset yang terhitung; field ini membuat keterbatasan itu
+    # transparan ke API/explain (kebijakan "proxy + lewati, ditandai", Day 7).
+    skipped_criteria: list[str] = field(default_factory=list)
 
 
 #: Hasil baku saat data tidak cukup — semua strategi memakai ini agar seragam.

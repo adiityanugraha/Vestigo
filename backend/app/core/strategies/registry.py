@@ -19,7 +19,7 @@ from importlib import import_module
 from app.core.strategies.base import StockData, Strategy, StrategyResult, StrategyType
 
 # Modul strategi yang dimuat load_defaults(). Urutan = urutan tampil di API.
-# Day 7 menambah: turnaround, timeless.
+# LENGKAP: 9 strategi (5 teknikal + 4 fundamental) sesuai blueprint Phase 3.
 _DEFAULT_MODULES = [
     "app.core.strategies.bsjp",
     "app.core.strategies.bpjs",
@@ -28,6 +28,8 @@ _DEFAULT_MODULES = [
     "app.core.strategies.potential_reversal",
     "app.core.strategies.high_growth",
     "app.core.strategies.cash_rich",
+    "app.core.strategies.turnaround",
+    "app.core.strategies.timeless",
 ]
 
 _strategies: dict[str, Strategy] = {}
