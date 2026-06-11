@@ -5,10 +5,13 @@ import { AiReportCard } from "./AiReportCard";
 import { CandlestickChart } from "./CandlestickChart";
 import { CompositeScoreCard } from "./CompositeScoreCard";
 import { DashboardShell } from "./DashboardShell";
+import { ExplainPanel } from "./ExplainPanel";
+import { ForecastCard } from "./ForecastCard";
 import { MarketBreadthCard } from "./MarketBreadthCard";
 import { PredictionPanel } from "./PredictionPanel";
 import { RiskMeterCard } from "./RiskMeterCard";
 import { ScreenerHistoryCard } from "./ScreenerHistoryCard";
+import { StrengthBadge } from "./StrengthBadge";
 import { SupportResistanceCard } from "./SupportResistanceCard";
 
 // Page Screener: seluruh analitik per-saham & pasar (dipindah dari dashboard).
@@ -39,6 +42,15 @@ export function ScreenerView() {
         <RiskMeterCard symbol={selectedSymbol} />
         <SupportResistanceCard symbol={selectedSymbol} />
       </section>
+
+      {/* Phase 3 (Day 15): forecast multi-horizon, strength lintas-strategi,
+          dan panel penjelasan untuk saham terpilih */}
+      <section className="grid gap-6 lg:grid-cols-2">
+        <ForecastCard symbol={selectedSymbol} />
+        <StrengthBadge symbol={selectedSymbol} />
+      </section>
+
+      <ExplainPanel symbol={selectedSymbol} />
 
       <section className="grid gap-6 xl:grid-cols-2">
         <CompositeScoreCard

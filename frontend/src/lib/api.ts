@@ -332,6 +332,74 @@ export type StrategyMatrixResponse = {
 };
 
 // --------------------------------------------------------------------------- //
+// Tipe Phase 3 — Forecast, Strength, Explain, Why (Day 15)
+// --------------------------------------------------------------------------- //
+export type ForecastResponse = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  date: string | null;
+  prob: { "1d": number; "5d": number; "20d": number };
+  confidence: "LOW" | "MEDIUM" | "HIGH";
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type StrengthComponent = {
+  strategy: string;
+  type: string;
+  weight: number;
+};
+
+export type StrengthResponse = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  date: string | null;
+  strength: number;
+  points: number;
+  max_points: number;
+  passed_strategies: string[];
+  breakdown: StrengthComponent[];
+  cached: boolean;
+  generated_at: string;
+};
+
+export type ExplainResponse = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  date: string | null;
+  confidence: number;
+  bullish_factors: string[];
+  risk_factors: string[];
+  passed_strategies: string[];
+  cached: boolean;
+  generated_at: string;
+};
+
+export type MatchedStrategy = {
+  key: string;
+  name: string;
+  type: string;
+  reasons: string[];
+  skipped: string[];
+};
+
+export type WhyResponse = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  date: string | null;
+  matched: string[];
+  matched_strategies: MatchedStrategy[];
+  reasons: string[];
+  cached: boolean;
+  generated_at: string;
+};
+
+// --------------------------------------------------------------------------- //
 // Endpoint
 // --------------------------------------------------------------------------- //
 export function getScreener(limit = 5, useMl = true): Promise<ScreenerResponse> {
@@ -389,4 +457,20 @@ export function getScreenerAll(limit = 10): Promise<AllStrategiesResponse> {
 
 export function getStrategyMatrix(minPassed = 1): Promise<StrategyMatrixResponse> {
   return apiGet("/api/strategy-matrix", { min_passed: minPassed });
+}
+
+export function getForecast(symbol: string): Promise<ForecastResponse> {
+  return apiGet(`/api/forecast/${bareTicker(symbol)}`);
+}
+
+export function getStrength(symbol: string): Promise<StrengthResponse> {
+  return apiGet(`/api/strength/${bareTicker(symbol)}`);
+}
+
+export function getExplain(symbol: string): Promise<ExplainResponse> {
+  return apiGet(`/api/explain/${bareTicker(symbol)}`);
+}
+
+export function getWhy(symbol: string): Promise<WhyResponse> {
+  return apiGet(`/api/why/${bareTicker(symbol)}`);
 }
