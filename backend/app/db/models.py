@@ -234,6 +234,32 @@ class StrategyResultRow(Base):
     )
 
 
+class StrengthScore(Base):
+    """Screener Strength Score lintas-strategi (Phase 3 Day 9).
+
+    Menggabungkan SEMUA strategi yang lolos untuk satu saham menjadi satu skor
+    0-100 (berbobot per tipe). Satu baris per (date, ticker). passed_strategies
+    JSONB menyimpan daftar key strategi yang lolos pada tanggal itu.
+    """
+
+    __tablename__ = "strength_score"
+    __table_args__ = (
+        UniqueConstraint("date", "ticker", name="uq_strength_date_ticker"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    passed_strategies: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    strength: Mapped[int] = mapped_column(Integer, index=True)  # 0-100
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class FundamentalDerived(Base):
     """Metrik fundamental yang BERGANTUNG HARGA — refresh harian (Day 5).
 
