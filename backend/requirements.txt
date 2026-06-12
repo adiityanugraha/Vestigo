@@ -26,6 +26,8 @@ onnxruntime==1.26.0
 # --- Data / numerik ---
 pandas==3.0.3
 numpy==1.26.4             # <2 untuk kompatibilitas onnxruntime
+scipy==1.17.1             # Phase 4: statistik, korelasi, Monte Carlo (sudah ikut
+                          # terinstal sebagai dependensi scikit-learn; di-pin eksplisit)
 
 # --- HTTP client (fetch Yahoo Finance server-side, dipakai mulai Day 3) ---
 httpx==0.28.1

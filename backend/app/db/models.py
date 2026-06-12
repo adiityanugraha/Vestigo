@@ -1,12 +1,23 @@
-"""SQLAlchemy ORM models — skema database Pocket Screener (Phase 2).
+"""SQLAlchemy ORM models — skema database Pocket Screener.
 
-Tabel (sesuai blueprint):
+Tabel (Phase 2):
   - stocks            : master daftar saham IDX
   - market_data       : OHLCV harian + indikator teknikal pre-computed
   - screening_history : hasil screener harian (BSJP/BPJS)
-  - backtesting       : ringkasan performa strategi
+  - backtesting       : ringkasan performa strategi (legacy; diperluas oleh
+                        strategy_performance di Phase 4)
   - user_watchlist    : watchlist per user
   - market_breadth    : ringkasan breadth pasar harian (Day 11)
+
+Tabel (Phase 3):
+  - fundamentals, fundamental_derived, strategy_results, forecast, strength_score
+
+Tabel (Phase 4 — Quant Validation, Day 1):
+  - replay_history       : snapshot kandidat per strategi + return forward
+  - strategy_performance : metrik kuantitatif per strategi/periode
+  - equity_curve         : kurva pertumbuhan modal per strategi/tanggal
+  - correlation_matrix   : korelasi pasangan saham (universe terbatas)
+  - portfolio            : hasil Portfolio Builder (opsional)
 """
 
 from __future__ import annotations
@@ -316,4 +327,146 @@ class FundamentalDerived(Base):
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ============================================================================
+# Phase 4 — Quant Analytics & Validation (Day 1)
+# ============================================================================
+
+
+class ReplayHistory(Base):
+    """Snapshot kandidat screening + return forward untuk Market Replay (Day 7).
+
+    Materialisasi dari strategy_results (Phase 3) + harga forward dari
+    market_data agar replay tanggal historis cepat tanpa join berat. Satu baris
+    per (date, ticker, strategy). ret_* diisi BELAKANGAN saat horizonnya jatuh
+    tempo (mis. ret_30d 30 hari setelah `date`) — None bila belum tersedia.
+
+    Hanya diisi untuk strategi yang DIVALIDASI HISTORIS (5 teknikal: bsjp, bpjs,
+    breakout, trend_following, potential_reversal). Strategi fundamental
+    dikecualikan dari backtest Phase 4 (tidak ada fundamental point-in-time).
+    """
+
+    __tablename__ = "replay_history"
+    __table_args__ = (
+        UniqueConstraint(
+            "date", "ticker", "strategy", name="uq_replay_date_ticker_strategy"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    strategy: Mapped[str] = mapped_column(String(24), index=True)
+    score: Mapped[float | None] = mapped_column(Float)
+    price: Mapped[float | None] = mapped_column(Float)  # close pada tanggal screening
+
+    ret_1d: Mapped[float | None] = mapped_column(Float)
+    ret_3d: Mapped[float | None] = mapped_column(Float)
+    ret_7d: Mapped[float | None] = mapped_column(Float)
+    ret_30d: Mapped[float | None] = mapped_column(Float)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class StrategyPerformance(Base):
+    """Metrik kuantitatif lanjutan per strategi/periode (Day 4).
+
+    Memperluas tabel `backtesting` Phase 2 (winrate/cumret/maxdd) dengan Sharpe,
+    Sortino, Calmar, Profit Factor, Recovery Factor, CAGR. Satu baris per
+    (strategy, period). `period` mis. "ALL" (seluruh rentang) / "2024" (per
+    tahun) / "walkforward" (gabungan out-of-sample).
+    """
+
+    __tablename__ = "strategy_performance"
+    __table_args__ = (
+        UniqueConstraint("strategy", "period", name="uq_strategy_performance_strategy_period"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    strategy: Mapped[str] = mapped_column(String(24), index=True)
+    period: Mapped[str] = mapped_column(String(24), index=True, default="ALL")
+
+    cagr: Mapped[float | None] = mapped_column(Float)
+    winrate: Mapped[float | None] = mapped_column(Float)
+    sharpe_ratio: Mapped[float | None] = mapped_column(Float)
+    sortino_ratio: Mapped[float | None] = mapped_column(Float)
+    calmar_ratio: Mapped[float | None] = mapped_column(Float)
+    max_drawdown: Mapped[float | None] = mapped_column(Float)
+    profit_factor: Mapped[float | None] = mapped_column(Float)
+    recovery_factor: Mapped[float | None] = mapped_column(Float)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class EquityCurve(Base):
+    """Kurva pertumbuhan modal per strategi/tanggal (Day 5).
+
+    Dibangun dari return series hasil rekonstruksi (Bagian A). `peak` =
+    high-water mark berjalan; `drawdown` = (portfolio_value - peak) / peak
+    (<= 0). Satu baris per (strategy, date).
+    """
+
+    __tablename__ = "equity_curve"
+    __table_args__ = (
+        UniqueConstraint("strategy", "date", name="uq_equity_curve_strategy_date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    strategy: Mapped[str] = mapped_column(String(24), index=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+
+    portfolio_value: Mapped[float | None] = mapped_column(Float)
+    drawdown: Mapped[float | None] = mapped_column(Float)
+    peak: Mapped[float | None] = mapped_column(Float)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class CorrelationMatrix(Base):
+    """Korelasi Pearson antar pasangan saham (Day 9).
+
+    Universe DIBATASI (LQ45 / ter-screen / watchlist) karena O(n^2). Hanya
+    pasangan unik disimpan dengan konvensi ticker_a < ticker_b. PK gabungan
+    (ticker_a, ticker_b, window) — `window` mis. "90d".
+    """
+
+    __tablename__ = "correlation_matrix"
+
+    ticker_a: Mapped[str] = mapped_column(String(12), primary_key=True)
+    ticker_b: Mapped[str] = mapped_column(String(12), primary_key=True)
+    window: Mapped[str] = mapped_column(String(8), primary_key=True)  # mis. "90d"
+    correlation: Mapped[float | None] = mapped_column(Float)
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Portfolio(Base):
+    """Hasil Portfolio Builder (Day 12, penyimpanan opsional).
+
+    `allocations` JSONB: [{"ticker": "BBCA", "weight": 0.30}, ...]. `user_id`
+    nullable karena belum ada autentikasi (default "anon").
+    """
+
+    __tablename__ = "portfolio"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    risk_profile: Mapped[str] = mapped_column(String(16))  # CONSERVATIVE|MODERATE|AGGRESSIVE
+    allocations: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
     )
