@@ -16,14 +16,28 @@ dan inferensi model dijalankan via **ONNX Runtime Web**.
 > komponen memanggil REST API lewat `src/lib/api.ts`.
 >
 > - **Base URL** dari `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8000`).
-> - **Halaman:**
->   - `/` **Dashboard** → konteks pasar **IHSG** (chart + AI Report + Risk Meter + S/R), simbol terkunci.
->   - `/screener` **Screener** → Market Breadth, tabel screener BSJP/BPJS, chart & analitik saham terpilih, Composite Score, Screener History.
->   - `/backtest` → snapshot backtesting offline (tetap dari Phase 1).
 > - **Card baru** (Phase 2): `AiReportCard`, `RiskMeterCard`, `SupportResistanceCard`,
 >   `MarketBreadthCard`, `CompositeScoreCard`, `ScreenerHistoryCard` + hook `useApi`.
 > - File Phase 1 (`predictionPipeline.ts`, `mlInference.ts`, `fetchData.ts`, `Heatmap.tsx`)
 >   masih ada untuk halaman Backtest, tetapi tak lagi dipakai dashboard utama.
+
+> ### 🧠 Update Phase 3 — Multi-Strategy & Explainable
+>
+> - **Halaman baru `/strategies`** — pemilih **9 strategi** (5 teknikal + 4
+>   fundamental), hasil per-strategi dengan `matched_criteria`, dan **Strategy
+>   Comparison Matrix** (`MultiStrategyView`, `StrategyMatrix`).
+> - **Panel baru di `/screener`** (mengikuti saham terpilih): `ForecastCard`
+>   (Probability Forecast 1D/5D/20D + disclaimer), `StrengthBadge` (Strength
+>   Score 0–100 lintas-strategi), `ExplainPanel` (Explainable AI + Why Selected).
+> - **`src/lib/api.ts`** ditambah tipe & fungsi: `getStrategies`,
+>   `getStrategyScreener`, `getScreenerAll`, `getStrategyMatrix`, `getForecast`,
+>   `getStrength`, `getExplain`, `getWhy`.
+>
+> **Halaman:**
+>   - `/` **Dashboard** → konteks pasar **IHSG** (chart + AI Report + Risk Meter + S/R), simbol terkunci.
+>   - `/screener` **Screener** → Market Breadth, tabel BSJP/BPJS, analitik saham terpilih (AI/Risk/S&R), **Forecast**, **Strength**, **Explain Panel**, Composite Score, Screener History.
+>   - `/strategies` **Strategies** → pemilih 9 strategi + Strategy Comparison Matrix.
+>   - `/backtest` → snapshot backtesting offline (tetap dari Phase 1).
 >
 > Bagian di bawah ini mendokumentasikan desain **Phase 1** (komputasi browser)
 > sebagai referensi.
