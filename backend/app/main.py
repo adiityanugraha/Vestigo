@@ -28,6 +28,7 @@ from app.api import (
     performance,
     ranking,
     replay,
+    risk_profile,
     risk,
     screener,
     stock_report,
@@ -79,6 +80,7 @@ app.include_router(performance.router)
 app.include_router(equity_curve.router)
 app.include_router(benchmark.router)
 app.include_router(replay.router)
+app.include_router(risk_profile.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
