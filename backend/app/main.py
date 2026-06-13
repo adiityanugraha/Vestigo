@@ -27,6 +27,7 @@ from app.api import (
     market_data,
     performance,
     ranking,
+    replay,
     risk,
     screener,
     stock_report,
@@ -77,6 +78,7 @@ app.include_router(health.router)
 app.include_router(performance.router)
 app.include_router(equity_curve.router)
 app.include_router(benchmark.router)
+app.include_router(replay.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
