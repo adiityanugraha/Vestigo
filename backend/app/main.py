@@ -23,6 +23,7 @@ from app.api import (
     history,
     market_breadth,
     market_data,
+    performance,
     ranking,
     risk,
     screener,
@@ -71,6 +72,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(health.router)
+app.include_router(performance.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)

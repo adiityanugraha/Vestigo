@@ -31,6 +31,7 @@ TTL_INDICATORS = 15 * 60   # indikator teknikal
 TTL_RANKING = 60 * 60      # composite score / ranking (Day 7)
 TTL_REPORT = 60 * 60       # AI stock report (Day 8)
 TTL_SUPPORT_RESISTANCE = 30 * 60  # S/R levels (Day 10)
+TTL_QUANT = 12 * 60 * 60   # metrik kuantitatif Phase 4 (dihitung job malam, stabil seharian)
 
 _client: redis.Redis | None = None
 _initialized = False
