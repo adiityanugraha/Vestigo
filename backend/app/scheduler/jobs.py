@@ -13,9 +13,13 @@ import logging
 
 from sqlalchemy import select
 
+from app.api import benchmark as benchmark_api
+from app.api import correlation as correlation_api
 from app.api import forecast as forecast_api
+from app.api import monte_carlo as monte_carlo_api
 from app.api import stock_report
 from app.api import strength as strength_api
+from app.api import walkforward as walkforward_api
 from app.api.ranking import CACHE_KEY as RANKING_CACHE_KEY
 from app.api.ranking import run_ranking
 from app.api.screener import run_screener
@@ -28,6 +32,12 @@ from app.data import fundamentals_derived, fundamentals_fetch
 from app.db.models import Stock
 from app.db.session import SessionLocal
 from app.ml import forecast_model
+from app.quant import correlation_matrix as cm
+from app.quant import equity_curve as quant_equity
+from app.quant import forward_returns as quant_returns
+from app.quant import monte_carlo as mc
+from app.quant import performance_metrics as pm
+from app.quant import walk_forward as wf
 
 log = logging.getLogger("scheduler.jobs")
 
@@ -173,3 +183,83 @@ def job_generate_reports(use_ml: bool = REPORT_USE_ML) -> int:
             generated += 1
     log.info("generate_reports: %s report dibuat & di-cache", generated)
     return generated
+
+
+# --------------------------------------------------------------------------- #
+# Phase 4 — job malam quant (berat → setelah pasar tutup) + berkala
+# --------------------------------------------------------------------------- #
+def job_generate_quant_metrics() -> int:
+    """18:00 (Phase 4) — Performance Metrics + Benchmark (+IHSG) + Equity Curve.
+
+    get_benchmark me-recompute & mem-persist strategy_performance (5 strategi +
+    baris ihsg) lalu menghangatkan cache benchmark; equity_curve.compute_all
+    mem-persist tabel equity_curve. Membaca trade log replay_history.
+    """
+    with SessionLocal() as db:
+        benchmark_api.get_benchmark(hold=pm.DEFAULT_HOLD, refresh=True, db=db)
+        curves = quant_equity.compute_all(db, persist=True, progress=False)
+    log.info("generate_quant_metrics: benchmark + %s equity curve dipersist", len(curves))
+    return len(curves)
+
+
+def job_update_correlation(universe: str = "lq45") -> int:
+    """19:00 (Phase 4) — Correlation Matrix universe terbatas -> correlation_matrix + cache."""
+    with SessionLocal() as db:
+        result = correlation_api.get_correlation(
+            universe=universe, window=cm.DEFAULT_WINDOW, refresh=True, db=db
+        )
+    n = result["n"]
+    log.info("update_correlation: %s ticker (%s) korelasi dipersist & di-cache", n, universe)
+    return n
+
+
+def job_run_monte_carlo() -> int:
+    """20:00 (Phase 4) — Monte Carlo tiap strategi tervalidasi -> hangatkan cache.
+
+    Tak ada tabel MC; menghangatkan cache Redis = bentuk persistensinya.
+    """
+    warmed = 0
+    with SessionLocal() as db:
+        for strategy in pm.VALIDATED_STRATEGIES:
+            monte_carlo_api.get_monte_carlo(
+                strategy,
+                hold=pm.DEFAULT_HOLD,
+                horizon_years=mc.DEFAULT_HORIZON_YEARS,
+                simulations=mc.DEFAULT_SIMULATIONS,
+                refresh=True,
+                db=db,
+            )
+            warmed += 1
+    log.info("run_monte_carlo: %s strategi disimulasikan & di-cache", warmed)
+    return warmed
+
+
+def job_refresh_replay_returns(tickers: list[str] | None = None) -> int:
+    """Berkala (Phase 4) — Isi/segarkan return forward replay_history.
+
+    Memasukkan kandidat baru (return masih NULL) & mengisi horizon yang sudah
+    jatuh tempo (mis. ret_30d setelah 30 hari). Idempoten via upsert.
+    """
+    with SessionLocal() as db:
+        summary = quant_returns.build_replay_history(
+            db, tickers=tickers, persist=True, progress=False
+        )
+    log.info("refresh_replay_returns: %s trade ter-materialisasi", summary["persisted"])
+    return summary["persisted"]
+
+
+def job_refresh_walk_forward() -> int:
+    """Berkala (Phase 4) — Refresh walk-forward (paling berat) -> hangatkan cache."""
+    warmed = 0
+    with SessionLocal() as db:
+        for strategy in pm.VALIDATED_STRATEGIES:
+            walkforward_api.get_walkforward(
+                strategy,
+                hold=pm.DEFAULT_HOLD,
+                min_train_years=wf.DEFAULT_MIN_TRAIN_YEARS,
+                refresh=True,
+                db=db,
+            )
+            warmed += 1
+    log.info("refresh_walk_forward: %s strategi di-cache", warmed)
+    return warmed

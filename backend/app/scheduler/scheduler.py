@@ -11,7 +11,12 @@ Jadwal (Asia/Jakarta) — Phase 2 + tambahan Phase 3 (Day 13):
   16:15  Probability Forecast          -> job_generate_forecasts            (P3)
   16:30  Strength Score lintas-strategi-> job_generate_strength             (P3)
   17:00  Generate AI report            -> job_generate_reports
+  18:00  Performance+Benchmark+Equity  -> job_generate_quant_metrics        (P4)
+  19:00  Correlation Matrix            -> job_update_correlation            (P4)
+  20:00  Monte Carlo Simulation        -> job_run_monte_carlo               (P4)
   Sabtu 06:00  Update fundamentals     -> job_update_fundamentals           (P3)
+  Sabtu 07:00  Refresh replay returns  -> job_refresh_replay_returns        (P4)
+  Sabtu 08:00  Refresh walk-forward    -> job_refresh_walk_forward          (P4)
 
 Catatan: job_run_screener menghitung KEDUA strategi (BSJP & BPJS) sekaligus; jam
 yang berbeda mewakili fase sesi bursa (pagi/sore) saat hasil di-refresh.
@@ -45,8 +50,14 @@ SCHEDULE: list[tuple[str, object, int, int, str | None]] = [
     ("forecast_1615", jobs.job_generate_forecasts, 16, 15, None),
     ("strength_1630", jobs.job_generate_strength, 16, 30, None),
     ("ai_report_1700", jobs.job_generate_reports, 17, 0, None),
-    # Mingguan: data fundamental berubah per kuartal (Sabtu pagi, pasar tutup).
+    # Phase 4 — job malam quant (berat, dijalankan saat pasar sudah tutup).
+    ("quant_metrics_1800", jobs.job_generate_quant_metrics, 18, 0, None),
+    ("correlation_1900", jobs.job_update_correlation, 19, 0, None),
+    ("monte_carlo_2000", jobs.job_run_monte_carlo, 20, 0, None),
+    # Mingguan (Sabtu pagi, pasar tutup).
     ("update_fundamentals_weekly", jobs.job_update_fundamentals, 6, 0, "sat"),
+    ("replay_returns_weekly", jobs.job_refresh_replay_returns, 7, 0, "sat"),  # P4
+    ("walk_forward_weekly", jobs.job_refresh_walk_forward, 8, 0, "sat"),      # P4
 ]
 
 _scheduler: BackgroundScheduler | None = None
