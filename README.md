@@ -1,9 +1,10 @@
 # Pocket Screener
 
 Screener saham harian **IDX** (Bursa Efek Indonesia) dengan **multi-strategi**
-(teknikal & fundamental), prediksi _machine learning_, dan penjelasan otomatis
-(_Explainable AI_). Proyek ini adalah **monorepo** dua bagian: frontend Next.js
-dan backend FastAPI.
+(teknikal & fundamental), prediksi _machine learning_, penjelasan otomatis
+(_Explainable AI_), serta **validasi kuantitatif** (backtest, benchmark, Monte
+Carlo, portfolio builder). Proyek ini adalah **monorepo** dua bagian: frontend
+Next.js dan backend FastAPI.
 
 > ⚠️ Proyek edukasi / tugas kuliah. **Bukan nasihat finansial.**
 
@@ -11,7 +12,7 @@ dan backend FastAPI.
 
 ## Gambaran Besar
 
-Pocket Screener dibangun dalam tiga fase:
+Pocket Screener dibangun dalam empat fase:
 
 - **Phase 1 — No-Backend.** Semua perhitungan (fetch data Yahoo, indikator teknikal,
   inferensi ML via ONNX Runtime Web) berjalan **sepenuhnya di browser**. Hasil
@@ -25,6 +26,14 @@ Pocket Screener dibangun dalam tiga fase:
   Registry_ yang pluggable, data **fundamental** (Yahoo), **Probability Forecast**
   multi-horizon (1D/5D/20D), **Strategy Matrix**, **Strength Score** lintas-strategi,
   serta **Explainable AI** + **Explain Why Selected**.
+- **Phase 4 — Quant Analytics & Validation.** Fokus **membuktikan** kualitas
+  strategi (bukan menambah AI baru): rekonstruksi histori screening **point-in-time**
+  (10 tahun, anti _look-ahead_) → **Market Replay**, **Walk-Forward Backtesting**,
+  metrik lanjutan (**CAGR · Sharpe · Sortino · Calmar · Profit Factor · Max
+  Drawdown**), **Strategy Benchmark** vs IHSG, **Equity Curve**, **Monte Carlo**,
+  **Risk Exposure** per strategi, **Correlation Matrix**, dan **Portfolio Builder**.
+  Hanya **5 strategi teknikal** yang divalidasi historis (fundamental dikecualikan —
+  tak ada data _point-in-time_).
 
 ```
 ┌─────────────────────────┐         REST/JSON          ┌──────────────────────────┐
@@ -34,18 +43,27 @@ Pocket Screener dibangun dalam tiga fase:
 │  • Dashboard (IHSG)      │     matrix, /strength,     │  • Data pipeline (Yahoo)  │
 │  • Screener + panel P3   │   /forecast, /explain,/why,│  • 9 strategi (registry)  │
 │  • Strategies (matrix)   │   /fundamentals, /risk,    │  • Composite/AI/Risk/S&R  │
-│  • Backtest              │   /stock-report, /history  │  • Forecast 1D/5D/20D (ML)│
-└─────────────────────────┘                            │  • APScheduler (WIB)      │
-                                                        └────────────┬──────────────┘
+│  • Quant (P4 dashboard)  │   /stock-report, /history, │  • Forecast 1D/5D/20D (ML)│
+│  • Backtest              │   /performance,/equity-    │  • Quant engine (P4)      │
+│                          │     curve,/benchmark,      │  • APScheduler (WIB)      │
+│                          │   /replay,/risk-profile,   │                           │
+│                          │   /monte-carlo,/walkforward│                           │
+│                          │   /correlation, /portfolio-│                           │
+│                          │     builder (POST)         │                           │
+└─────────────────────────┘                            └────────────┬──────────────┘
                                                                      │
                                        ┌─────────────────────────────┼───────────────┐
                                        ▼                             ▼                ▼
                                  PostgreSQL (Neon)          Redis (Upstash)     ONNX models
                                  market_data, stocks,       cache: harga,       model.onnx +
                                  fundamentals(+derived),    indikator, ranking, forecast_{1,5,20}d
-                                 strategy_results,          matrix, report      (RandomForest CPU)
-                                 strength_score, forecast,  
-                                 screening_history, breadth 
+                                 strategy_results,          matrix, report,     (RandomForest CPU)
+                                 strength_score, forecast,  quant (benchmark,
+                                 screening_history, breadth,  correlation, MC)
+                                 replay_history,
+                                 strategy_performance,
+                                 equity_curve,
+                                 correlation_matrix, portfolio
 ```
 
 ---
@@ -99,10 +117,35 @@ pocket-screener/
 - **Teknikal:** BSJP · BPJS · Breakout · Trend Following · Potential Reversal
 - **Fundamental:** High Growth · Turnaround · Timeless · Cash Rich
 
+### Phase 4 — Quant Analytics & Validation
+
+Memvalidasi **5 strategi teknikal** (BSJP · BPJS · Breakout · Trend Following ·
+Potential Reversal) atas **histori 10 tahun** yang direkonstruksi _point-in-time_
+(anti _look-ahead_), dengan asumsi biaya **0,3% per trade**.
+
+| Fitur | Endpoint | Keterangan |
+| ----- | -------- | ---------- |
+| **Market Replay** | `GET /api/replay/{date}` | Kandidat tiap strategi pada tanggal historis + return forward (+1/+3/+7/+30 hari). |
+| **Performance Metrics** | `GET /api/performance/{strategy}` | CAGR · Sharpe · Sortino · Calmar · Profit Factor · Recovery Factor · Max Drawdown · Winrate. |
+| **Strategy Benchmark** | `GET /api/benchmark` | Semua strategi berdampingan vs **IHSG** (buy & hold) — apakah mengalahkan pasar? |
+| **Equity Curve** | `GET /api/equity-curve/{strategy}` | Pertumbuhan modal + high-water mark + drawdown per tanggal. |
+| **Risk Exposure** | `GET /api/risk-profile/{strategy}` | Volatilitas · Beta vs IHSG · Max DD · Losing Streak → Low/Medium/High (per **strategi**). |
+| **Correlation Matrix** | `GET /api/correlation?universe=lq45` | Korelasi Pearson return harian (universe terbatas) untuk diversifikasi. |
+| **Monte Carlo** | `GET /api/monte-carlo/{strategy}` | Bootstrap return historis → Probability of Profit, P5/median/P95, histogram. |
+| **Walk-Forward** | `GET /api/walkforward/{strategy}` | Uji konsistensi out-of-sample per tahun (deteksi ketergantungan rezim). |
+| **Portfolio Builder** | `POST /api/portfolio-builder` | Alokasi otomatis per profil risiko (Composite Score + Risk Meter + Correlation). |
+
+> **Metodologi:** return series memakai **rebalancing kohort non-overlap** (blok
+> 30 hari bursa, basket equal-weight) — adil terhadap biaya & tanpa _volatility
+> drag_ sintetis. IHSG dihitung _buy & hold_ tanpa biaya. Semua hasil disertai
+> _disclaimer_ (alat bantu analisis/edukasi, bukan rekomendasi).
+
 **Scheduler harian (WIB / Asia-Jakarta):** 07:00 update data · **07:15 refresh
 fundamental** · **07:30 jalankan 9 strategi** · 09:30 & 10:00 & 15:30 screener ·
 16:00 ranking · **16:15 forecast** · **16:30 strength score** · 17:00 AI report ·
-**Sabtu 06:00 update data fundamental (mingguan)**.
+**18:00 performance + benchmark + equity curve** · **19:00 correlation** ·
+**20:00 Monte Carlo** · **Sabtu 06:00 update fundamental · 07:00 refresh trade log
+· 08:00 walk-forward** (mingguan).
 
 ---
 
@@ -116,6 +159,9 @@ fundamental** · **07:30 jalankan 9 strategi** · 09:30 & 10:00 & 15:30 screener
   Screener History.
 - **Strategies (`/strategies`)** — pemilih 9 strategi, hasil per-strategi dengan
   `matched_criteria`, dan **Strategy Comparison Matrix**.
+- **Quant (`/quant`)** — dashboard validasi kuantitatif Phase 4: **Strategy
+  Benchmark** (vs IHSG), **Equity Curve** + **Monte Carlo**, **Risk Exposure**,
+  **Correlation Heatmap**, **Market Replay**, dan **Portfolio Builder**.
 - **Backtest (`/backtest`)** — winrate, cumulative return, drawdown, metrik model.
 
 ---
@@ -133,15 +179,26 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env               # isi DATABASE_URL (Neon) & REDIS_URL (Upstash)
 python -m app.db.init_db             # buat tabel + seed daftar saham
-python -m app.core.market_data --range 2y   # ingest OHLCV 2 tahun + indikator
+python -m app.core.market_data --range 10y  # ingest OHLCV 10 tahun + indikator
 python -m app.data.fundamentals_fetch        # ingest data fundamental (Yahoo)
 python -m app.data.fundamentals_derived      # hitung metrik fundamental harian
 uvicorn app.main:app --reload --port 8000
 ```
 
+> **Phase 4 — rekonstruksi histori (sekali, offline).** Setelah ingest 10 tahun,
+> bangun trade log untuk fitur quant:
+>
+> ```powershell
+> python -m app.quant.reconstruct        # jalankan 5 strategi point-in-time → strategy_results
+> python -m app.quant.forward_returns    # hitung return forward → replay_history
+> ```
+>
+> Endpoint quant (benchmark, equity curve, dst.) lalu menghitung dari trade log
+> ini; job malam scheduler menyegarkannya otomatis.
+
 > **Model forecast** (`forecast_{1,5,20}d.onnx`) sudah disertakan di repo. Untuk
 > melatih ulang: `pip install scikit-learn skl2onnx` lalu
-> `python -m app.ml.train_forecast` (offline, butuh market_data 2 tahun).
+> `python -m app.ml.train_forecast` (offline, butuh market_data ≥ 2 tahun).
 
 **2. Frontend** (terminal 2)
 
@@ -167,6 +224,7 @@ Buka http://localhost:3000. Frontend membaca `NEXT_PUBLIC_API_BASE_URL`
 | ML | scikit-learn + skl2onnx (training offline) → ONNX → onnxruntime (inferensi server-side) |
 | Forecast | 3 model RandomForest terkalibrasi (1D/5D/20D), binary classification P(return > 0) |
 | Explainability | Rule-based (`matched_criteria`) + interpretasi fitur teknikal per-saham |
+| Quant (P4) | numpy · pandas · scipy — backtest, performance metrics, Monte Carlo, korelasi, portfolio |
 | Deploy | Vercel (frontend) · Railway (backend) |
 
 Detail tiap bagian: **[backend/README.md](backend/README.md)** dan
@@ -180,12 +238,14 @@ Dikembangkan oleh **Anak Agung Aryadipa Aditya Nugraha**
 ([@adiityanugraha](https://github.com/adiityanugraha)).
 
 Backend **Phase 2** (data pipeline, composite score, AI report, risk meter,
-support/resistance, market breadth, screener history, scheduler) & **Phase 3**
+support/resistance, market breadth, screener history, scheduler), **Phase 3**
 (Strategy Registry 9 strategi, data fundamental, Strategy Matrix, Strength Score,
-Probability Forecast, Explainable AI), serta **integrasi frontend ke REST API**,
-dikerjakan dengan bantuan **Claude (Anthropic)** sebagai AI pair-programmer
-melalui Claude Code — sehingga "Claude" tercatat sebagai _contributor_ pada
-riwayat Git repositori ini.
+Probability Forecast, Explainable AI), & **Phase 4** (rekonstruksi histori
+point-in-time, Market Replay, performance metrics, benchmark, equity curve, Monte
+Carlo, walk-forward, correlation, portfolio builder, Quant dashboard), serta
+**integrasi frontend ke REST API**, dikerjakan dengan bantuan **Claude
+(Anthropic)** sebagai AI pair-programmer melalui Claude Code — sehingga "Claude"
+tercatat sebagai _contributor_ pada riwayat Git repositori ini.
 
 ---
 
