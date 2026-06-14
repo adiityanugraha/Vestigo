@@ -26,6 +26,7 @@ from app.api import (
     history,
     market_breadth,
     market_data,
+    monte_carlo,
     performance,
     ranking,
     replay,
@@ -83,6 +84,7 @@ app.include_router(benchmark.router)
 app.include_router(replay.router)
 app.include_router(risk_profile.router)
 app.include_router(correlation.router)
+app.include_router(monte_carlo.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
