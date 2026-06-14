@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     benchmark,
+    correlation,
     equity_curve,
     explain,
     forecast,
@@ -81,6 +82,7 @@ app.include_router(equity_curve.router)
 app.include_router(benchmark.router)
 app.include_router(replay.router)
 app.include_router(risk_profile.router)
+app.include_router(correlation.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
