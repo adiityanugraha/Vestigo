@@ -399,6 +399,99 @@ export type WhyResponse = {
   generated_at: string;
 };
 
+// --- Phase 4: Quant Analytics & Validation -------------------------------- //
+export type QuantMetrics = {
+  cagr: number;
+  winrate: number;
+  sharpe_ratio: number;
+  sortino_ratio: number;
+  calmar_ratio: number;
+  max_drawdown: number;
+  profit_factor: number;
+  recovery_factor: number;
+};
+
+export type PerformanceResponse = {
+  strategy: string;
+  name: string | null;
+  period: string;
+  metrics: QuantMetrics;
+  n_trades: number;
+  n_periods: number;
+  active_periods: number;
+  start: string | null;
+  end: string | null;
+  hold: number;
+  methodology: string;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type EquityPoint = {
+  date: string;
+  value: number;
+  peak: number;
+  drawdown: number;
+};
+
+export type EquityCurveResponse = {
+  strategy: string;
+  name: string | null;
+  hold: number;
+  initial_capital: number;
+  points: EquityPoint[];
+  summary: { final_value: number; total_return: number; max_drawdown: number };
+  methodology: string;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type BenchmarkRow = {
+  strategy: string;
+  name: string | null;
+  is_benchmark: boolean;
+  n_periods: number;
+  metrics: QuantMetrics;
+  beats_market_cagr?: boolean | null;
+  beats_market_sharpe?: boolean | null;
+};
+
+export type BenchmarkResponse = {
+  hold: number;
+  market: BenchmarkRow;
+  strategies: BenchmarkRow[];
+  methodology: string;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type ReplayCandidate = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  price: number | null;
+  value: number | null;
+  ret: {
+    "1d": number | null;
+    "3d": number | null;
+    "7d": number | null;
+    "30d": number | null;
+  };
+};
+
+export type ReplayResponse = {
+  date: string;
+  total_candidates: number;
+  strategies: Record<string, ReplayCandidate[]>;
+  data_range: { earliest: string | null; latest: string | null };
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
 // --------------------------------------------------------------------------- //
 // Endpoint
 // --------------------------------------------------------------------------- //
@@ -473,4 +566,24 @@ export function getExplain(symbol: string): Promise<ExplainResponse> {
 
 export function getWhy(symbol: string): Promise<WhyResponse> {
   return apiGet(`/api/why/${bareTicker(symbol)}`);
+}
+
+// --- Phase 4: Quant Analytics & Validation -------------------------------- //
+export function getPerformance(strategy: string): Promise<PerformanceResponse> {
+  return apiGet(`/api/performance/${strategy}`);
+}
+
+export function getEquityCurve(
+  strategy: string,
+  initialCapital = 100_000_000,
+): Promise<EquityCurveResponse> {
+  return apiGet(`/api/equity-curve/${strategy}`, { initial_capital: initialCapital });
+}
+
+export function getBenchmark(): Promise<BenchmarkResponse> {
+  return apiGet("/api/benchmark");
+}
+
+export function getReplay(date: string, limit = 10): Promise<ReplayResponse> {
+  return apiGet(`/api/replay/${date}`, { limit });
 }

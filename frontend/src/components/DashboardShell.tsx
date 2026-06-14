@@ -5,6 +5,7 @@ const navItems = [
   { label: "Dashboard", href: "/" },
   { label: "Screener", href: "/screener" },
   { label: "Strategies", href: "/strategies" },
+  { label: "Quant", href: "/quant" },
   { label: "Backtest", href: "/backtest" },
 ];
 
