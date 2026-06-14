@@ -38,6 +38,7 @@ from app.api import (
     strategy_matrix,
     strength,
     support_resistance,
+    walkforward,
     why,
 )
 from app.core.config import get_settings
@@ -85,6 +86,7 @@ app.include_router(replay.router)
 app.include_router(risk_profile.router)
 app.include_router(correlation.router)
 app.include_router(monte_carlo.router)
+app.include_router(walkforward.router)
 app.include_router(strategies.router)
 app.include_router(strategy_matrix.router)
 app.include_router(strength.router)
