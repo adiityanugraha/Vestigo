@@ -44,6 +44,34 @@ async function apiGet<T>(path: string, params?: Record<string, string | number |
   return (await response.json()) as T;
 }
 
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(
+      `Tidak bisa terhubung ke backend (${API_BASE_URL}). Pastikan server FastAPI berjalan.`,
+    );
+  }
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const data = (await response.json()) as { detail?: string };
+      if (data?.detail) detail = data.detail;
+    } catch {
+      /* abaikan body non-JSON */
+    }
+    throw new Error(detail);
+  }
+
+  return (await response.json()) as T;
+}
+
 // --------------------------------------------------------------------------- //
 // Tipe respons (mirror schema Pydantic backend)
 // --------------------------------------------------------------------------- //
@@ -492,6 +520,88 @@ export type ReplayResponse = {
   generated_at: string;
 };
 
+export type HistogramBin = { start: number; end: number; count: number };
+
+export type MonteCarloResponse = {
+  strategy: string;
+  name: string | null;
+  hold: number;
+  horizon_years: number;
+  n_periods: number;
+  simulations: number;
+  history_periods: number;
+  probability_of_profit: number;
+  mean: number;
+  percentiles: { p5: number; p25: number; p50: number; p75: number; p95: number };
+  histogram: HistogramBin[];
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type RiskProfileResponse = {
+  strategy: string;
+  name: string | null;
+  hold: number;
+  volatility: number;
+  avg_atr_pct: number | null;
+  beta: number;
+  max_drawdown: number;
+  losing_streak: number;
+  risk_level: string;
+  n_periods: number;
+  thresholds: Record<string, number>;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string;
+};
+
+export type CorrelationPair = {
+  ticker_a: string;
+  ticker_b: string;
+  correlation: number;
+};
+
+export type CorrelationResponse = {
+  universe: string;
+  window: string;
+  tickers: string[];
+  matrix: number[][];
+  top_correlated: CorrelationPair[];
+  n: number;
+  disclaimer: string;
+  computed_at: string;
+  cached: boolean;
+};
+
+export type PortfolioAllocation = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  weight: number;
+  amount: number;
+  score: number;
+  risk_level: string;
+  risk_score: number;
+};
+
+export type PortfolioResponse = {
+  risk_profile: string;
+  capital: number;
+  universe: string;
+  n_positions: number;
+  allocations: PortfolioAllocation[];
+  summary: {
+    weighted_risk_score: number;
+    portfolio_risk_level: string;
+    avg_correlation: number;
+    config: Record<string, unknown>;
+  };
+  saved_id: number | null;
+  disclaimer: string;
+  generated_at: string;
+};
+
 // --------------------------------------------------------------------------- //
 // Endpoint
 // --------------------------------------------------------------------------- //
@@ -586,4 +696,27 @@ export function getBenchmark(): Promise<BenchmarkResponse> {
 
 export function getReplay(date: string, limit = 10): Promise<ReplayResponse> {
   return apiGet(`/api/replay/${date}`, { limit });
+}
+
+export function getMonteCarlo(strategy: string): Promise<MonteCarloResponse> {
+  return apiGet(`/api/monte-carlo/${strategy}`);
+}
+
+export function getRiskProfile(strategy: string): Promise<RiskProfileResponse> {
+  return apiGet(`/api/risk-profile/${strategy}`);
+}
+
+export function getCorrelation(
+  universe = "lq45",
+  window = 90,
+): Promise<CorrelationResponse> {
+  return apiGet("/api/correlation", { universe, window });
+}
+
+export function postPortfolioBuilder(body: {
+  risk: string;
+  capital: number;
+  universe: string;
+}): Promise<PortfolioResponse> {
+  return apiPost("/api/portfolio-builder", body);
 }

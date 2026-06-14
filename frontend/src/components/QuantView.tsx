@@ -7,6 +7,10 @@ import { DashboardShell } from "./DashboardShell";
 import { StrategyBenchmark } from "./quant/StrategyBenchmark";
 import { EquityCurveChart } from "./quant/EquityCurveChart";
 import { MarketReplay } from "./quant/MarketReplay";
+import { MonteCarloChart } from "./quant/MonteCarloChart";
+import { RiskExposure } from "./quant/RiskExposure";
+import { CorrelationHeatmap } from "./quant/CorrelationHeatmap";
+import { PortfolioBuilder } from "./quant/PortfolioBuilder";
 
 export function QuantView() {
   return (
@@ -16,8 +20,14 @@ export function QuantView() {
       title="Quant Analytics"
     >
       <StrategyBenchmark />
-      <EquityCurveChart />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <EquityCurveChart />
+        <MonteCarloChart />
+      </div>
+      <RiskExposure />
+      <CorrelationHeatmap />
       <MarketReplay />
+      <PortfolioBuilder />
     </DashboardShell>
   );
 }
