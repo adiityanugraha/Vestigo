@@ -40,3 +40,9 @@ pytest==9.0.3
 # hanya untuk menjalankan `python -m app.ml.train_forecast`.
 scikit-learn==1.9.0
 skl2onnx==1.20.0
+
+# --- Phase 5: lapisan AI (LLM + RAG) ---
+# google-genai: SDK Google Gemini (LLM + embedding text-embedding-004), free tier.
+# pgvector: tipe kolom vektor untuk SQLAlchemy + ekstensi PostgreSQL (vector store RAG).
+google-genai==2.8.0
+pgvector==0.4.2

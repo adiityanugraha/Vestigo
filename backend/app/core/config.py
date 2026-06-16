@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     # Set SCHEDULER_ENABLED=false di .env untuk mematikan (mis. saat testing).
     scheduler_enabled: bool = True
 
+    # --- Phase 5: lapisan AI (LLM + embedding) ---
+    # API key Google Gemini (free tier, dari Google AI Studio). Disimpan HANYA di
+    # environment server — tidak pernah di kode/klien. Bila kosong, lapisan AI
+    # nonaktif (aman-gagal): wrapper LLM jadi tak-tersedia & caller fallback.
+    gemini_api_key: str | None = None
+    # Nama model dibuat generik agar wrapper provider-agnostic (mudah ganti
+    # provider tanpa ubah kode pemanggil).
+    llm_model: str = "gemini-2.5-flash"
+    embedding_model: str = "text-embedding-004"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
