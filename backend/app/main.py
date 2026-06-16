@@ -34,6 +34,7 @@ from app.api import (
     risk_profile,
     risk,
     screener,
+    sector_rotation,
     stock_report,
     strategies,
     strategy_matrix,
@@ -104,6 +105,7 @@ app.include_router(risk.router)
 app.include_router(support_resistance.router)
 app.include_router(market_breadth.router)
 app.include_router(history.router)
+app.include_router(sector_rotation.router)
 
 
 @app.get("/")
