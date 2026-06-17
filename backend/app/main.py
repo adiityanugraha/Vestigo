@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     ai_analysis,
     benchmark,
+    chat,
     correlation,
     equity_curve,
     explain,
@@ -110,6 +111,7 @@ app.include_router(history.router)
 app.include_router(sector_rotation.router)
 app.include_router(ai_analysis.router)
 app.include_router(explain_score.router)
+app.include_router(chat.router)
 
 
 @app.get("/")

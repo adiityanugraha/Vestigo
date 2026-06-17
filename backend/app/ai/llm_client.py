@@ -211,15 +211,23 @@ def stream(
     client = get_client()
     if client is None:
         raise LLMError("Lapisan AI nonaktif (GEMINI_API_KEY belum diisi).")
-    try:
-        stream_iter = client.models.generate_content_stream(
-            model=_model_name(model),
-            contents=prompt,
-            config=_config(system, temperature, max_output_tokens),
-        )
-        for chunk in stream_iter:
-            text = getattr(chunk, "text", None)
-            if text:
-                yield text
-    except Exception as exc:  # noqa: BLE001
-        raise LLMError(f"Streaming LLM gagal: {exc}") from exc
+    model_name = _model_name(model)
+    config = _config(system, temperature, max_output_tokens)
+    for attempt in range(_MAX_RETRIES):
+        produced_any = False
+        try:
+            stream_iter = client.models.generate_content_stream(
+                model=model_name, contents=prompt, config=config
+            )
+            for chunk in stream_iter:
+                text = getattr(chunk, "text", None)
+                if text:
+                    produced_any = True
+                    yield text
+            return
+        except Exception as exc:  # noqa: BLE001
+            # Retry HANYA bila belum ada teks ter-yield (hindari duplikasi).
+            if not produced_any and attempt < _MAX_RETRIES - 1 and _is_retryable(exc):
+                time.sleep(_BACKOFF_BASE * (2 ** attempt))
+                continue
+            raise LLMError(f"Streaming LLM gagal: {exc}") from exc
