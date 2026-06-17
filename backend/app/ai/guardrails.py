@@ -43,6 +43,41 @@ SYSTEM_RULES = (
 )
 
 
+# Kata kunci domain (recall-oriented): bila salah satu muncul ATAU ada ticker
+# yang dikenal -> dianggap dalam cakupan. Sengaja longgar; kasus borderline tetap
+# diserahkan ke LLM (yang juga punya aturan cakupan). Hindari kata ultra-pendek
+# yang rawan false-positive.
+FINANCE_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "saham", "harga", "beli", "jual", "dividen", "emiten", "bursa", "ihsg",
+        "rsi", "macd", "bollinger", "atr", "vwap", "volume", "momentum", "tren",
+        "trend", "breakout", "reversal", "score", "skor", "composite", "komposit",
+        "risiko", "risk", "sektor", "sector", "rotasi", "forecast", "prediksi",
+        "support", "resistance", "resisten", "overbought", "oversold", "valuasi",
+        "pbv", "roe", "fundamental", "screener", "strategi", "portofolio",
+        "watchlist", "bullish", "bearish", "sharpe", "drawdown", "cuan", "rekomendasi",
+        "analisa", "analisis", "teknikal", "candle", "moving average", "naik", "turun",
+    }
+)
+
+
+def is_in_scope(message: str, known_tickers: set[str] | None = None) -> bool:
+    """True bila pertanyaan kemungkinan soal saham/Pocket Screener.
+
+    Recall-oriented: ada ticker dikenal ATAU kata kunci domain -> dalam cakupan.
+    Dipakai sebagai pra-filter MURAH (tanpa LLM) untuk menolak pertanyaan yang
+    jelas di luar topik sebelum membuang kuota.
+    """
+    low = message.lower()
+    if any(kw in low for kw in FINANCE_KEYWORDS):
+        return True
+    if known_tickers:
+        tokens = {t.upper() for t in low.replace("?", " ").split()}
+        if tokens & known_tickers:
+            return True
+    return False
+
+
 def ensure_disclaimer(text: str) -> str:
     """Pastikan output memuat disclaimer; tambahkan bila belum ada."""
     if not text:

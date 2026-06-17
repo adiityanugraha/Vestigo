@@ -53,12 +53,15 @@ def post_chat(req: ChatRequest):
         raise HTTPException(status_code=422, detail="message tidak boleh kosong.")
     session_id = req.session_id or uuid.uuid4().hex
 
+    # Muat riwayat sesi (giliran SEBELUMNYA) untuk konteks multi-giliran, lalu
+    # simpan pesan user saat ini.
+    history = chat_engine.load_history(session_id)
     _save(session_id, "user", message)
 
     if req.stream:
         def generate():
             chunks: list[str] = []
-            for piece in chat_engine.stream_answer(message):
+            for piece in chat_engine.stream_answer(message, history):
                 chunks.append(piece)
                 yield piece
             _save(session_id, "assistant", "".join(chunks))
@@ -69,7 +72,7 @@ def post_chat(req: ChatRequest):
             headers={"X-Session-Id": session_id},
         )
 
-    answer = chat_engine.answer(message)
+    answer = chat_engine.answer(message, history)
     _save(session_id, "assistant", answer)
     return ChatResponse(
         session_id=session_id, answer=answer, disclaimer=guardrails.DISCLAIMER
