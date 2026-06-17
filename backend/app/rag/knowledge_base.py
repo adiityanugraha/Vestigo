@@ -113,12 +113,10 @@ def seed(store: vector_store.LocalVectorStore | None = None) -> int:
 
 
 def search(query: str, top_k: int = 4) -> list[dict]:
-    """Cari konsep relevan untuk query (embed query -> cosine di store lokal)."""
-    store = vector_store.get_store()
-    if len(store) == 0:
-        return []
-    query_vector = embeddings.embed_query(query)
-    return store.search(query_vector, top_k=top_k)
+    """Cari konsep relevan untuk query (delegasi ke rag.retriever)."""
+    from app.rag import retriever
+
+    return retriever.retrieve(query, top_k=top_k)
 
 
 def main() -> None:
