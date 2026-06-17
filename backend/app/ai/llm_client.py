@@ -84,17 +84,24 @@ def _model_name(override: str | None) -> str:
 
 
 def _config(system: str | None, temperature: float | None, max_output_tokens: int | None, **extra: Any):
-    """Rakit GenerateContentConfig Gemini; hanya field non-None yang diisi."""
+    """Rakit GenerateContentConfig Gemini; hanya field non-None yang diisi.
+
+    Thinking DINONAKTIFKAN (thinking_budget=0) secara default: tugas Phase 5
+    sekadar menarasikan angka dari sistem (bukan reasoning kompleks), sehingga
+    thinking hanya menambah latensi & boros kuota free tier — dan dengan
+    max_output_tokens kecil, anggaran bisa habis untuk thinking sampai teks
+    jawaban kosong. Caller bisa override via extra["thinking_config"].
+    """
     from google.genai import types
 
-    params: dict[str, Any] = {}
+    params: dict[str, Any] = {"thinking_config": types.ThinkingConfig(thinking_budget=0)}
     if system is not None:
         params["system_instruction"] = system
     if temperature is not None:
         params["temperature"] = temperature
     if max_output_tokens is not None:
         params["max_output_tokens"] = max_output_tokens
-    params.update(extra)
+    params.update(extra)  # extra menang (mis. response_mime_type, atau override thinking)
     return types.GenerateContentConfig(**params)
 
 

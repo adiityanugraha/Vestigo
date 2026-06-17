@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # Nama model dibuat generik agar wrapper provider-agnostic (mudah ganti
     # provider tanpa ubah kode pemanggil).
     llm_model: str = "gemini-2.5-flash"
-    embedding_model: str = "text-embedding-004"
+    embedding_model: str = "gemini-embedding-001"
 
     model_config = SettingsConfigDict(
         env_file=".env",
