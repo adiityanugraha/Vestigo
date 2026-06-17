@@ -21,6 +21,7 @@ from app.api import (
     correlation,
     equity_curve,
     explain,
+    explain_score,
     forecast,
     fundamentals,
     health,
@@ -108,6 +109,7 @@ app.include_router(market_breadth.router)
 app.include_router(history.router)
 app.include_router(sector_rotation.router)
 app.include_router(ai_analysis.router)
+app.include_router(explain_score.router)
 
 
 @app.get("/")

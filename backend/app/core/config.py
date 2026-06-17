@@ -42,7 +42,10 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     # Nama model dibuat generik agar wrapper provider-agnostic (mudah ganti
     # provider tanpa ubah kode pemanggil).
-    llm_model: str = "gemini-2.5-flash"
+    # gemini-2.5-flash-lite: kuota harian free tier jauh lebih tinggi daripada
+    # gemini-2.5-flash (yang hanya ~20 req/hari) — penting untuk generasi batch
+    # (mis. 81 saham di job malam). Kualitas cukup untuk tugas narasi.
+    llm_model: str = "gemini-2.5-flash-lite"
     embedding_model: str = "gemini-embedding-001"
 
     model_config = SettingsConfigDict(
