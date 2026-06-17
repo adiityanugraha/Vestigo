@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -32,9 +33,35 @@ from app.core.config import get_settings
 
 log = logging.getLogger("app.ai")
 
+# Retry untuk error TRANSIEN (rate limit / overload) — krusial di free tier saat
+# generasi batch (mis. 81 saham di job malam). Backoff: 2s, 4s.
+_MAX_RETRIES = 3
+_BACKOFF_BASE = 2.0
+_RETRYABLE_MARKERS = ("429", "resource_exhausted", "rate", "503", "unavailable", "overload", "500")
+
 
 class LLMError(RuntimeError):
     """Kegagalan pemanggilan LLM (tak tersedia, error provider, atau parsing)."""
+
+
+def _is_retryable(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(marker in msg for marker in _RETRYABLE_MARKERS)
+
+
+def _generate_content(client: Any, *, model: str, contents: str, config: Any) -> Any:
+    """Panggil generate_content dengan retry+backoff pada error transien."""
+    last_exc: Exception | None = None
+    for attempt in range(_MAX_RETRIES):
+        try:
+            return client.models.generate_content(model=model, contents=contents, config=config)
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt < _MAX_RETRIES - 1 and _is_retryable(exc):
+                time.sleep(_BACKOFF_BASE * (2 ** attempt))
+                continue
+            raise
+    raise last_exc  # pragma: no cover
 
 
 # Singleton client + flag inisialisasi (pola sama dengan cache/redis_client).
@@ -121,7 +148,8 @@ def generate(
     if client is None:
         raise LLMError("Lapisan AI nonaktif (GEMINI_API_KEY belum diisi).")
     try:
-        resp = client.models.generate_content(
+        resp = _generate_content(
+            client,
             model=_model_name(model),
             contents=prompt,
             config=_config(system, temperature, max_output_tokens),
@@ -153,7 +181,8 @@ def generate_json(
     if schema is not None:
         extra["response_schema"] = schema
     try:
-        resp = client.models.generate_content(
+        resp = _generate_content(
+            client,
             model=_model_name(model),
             contents=prompt,
             config=_config(system, temperature, max_output_tokens, **extra),

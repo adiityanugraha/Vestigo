@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    ai_analysis,
     benchmark,
     correlation,
     equity_curve,
@@ -106,6 +107,7 @@ app.include_router(support_resistance.router)
 app.include_router(market_breadth.router)
 app.include_router(history.router)
 app.include_router(sector_rotation.router)
+app.include_router(ai_analysis.router)
 
 
 @app.get("/")

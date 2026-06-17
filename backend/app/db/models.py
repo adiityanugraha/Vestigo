@@ -34,6 +34,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -469,4 +470,38 @@ class Portfolio(Base):
     allocations: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5 — AI Financial Analyst
+# --------------------------------------------------------------------------- #
+class AiReport(Base):
+    """AI Analyst report per saham per tanggal (Phase 5 Day 5).
+
+    Narasi LLM di atas data sistem (Composite Score, Forecast, Risk, Sector, S/R).
+    ANGKA & faktor berasal dari sistem; LLM hanya menarasikan (anti-halusinasi).
+    `confidence` = Composite Score (0-100) dari sistem, bukan karangan LLM.
+    Upsert per (date, ticker). Memperluas AI Stock Report Phase 2.
+    """
+
+    __tablename__ = "ai_reports"
+    __table_args__ = (
+        UniqueConstraint("date", "ticker", name="uq_ai_reports_date_ticker"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    summary: Mapped[str | None] = mapped_column(Text)
+    bullish_factors: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    risk_factors: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    confidence: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

@@ -22,6 +22,7 @@ from fastapi import HTTPException
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from app.api import forecast as forecast_api
 from app.api import market_breadth as breadth_api
 from app.api import ranking as ranking_api
 from app.api import risk as risk_api
@@ -94,6 +95,10 @@ def _composite_score(args: dict[str, Any], db: Session) -> dict[str, Any]:
     return item
 
 
+def _forecast(args: dict[str, Any], db: Session) -> dict[str, Any]:
+    return forecast_api.get_forecast(ticker=_ticker(args), refresh=False, db=db)
+
+
 def _sector_rotation(args: dict[str, Any], db: Session) -> dict[str, Any]:
     return sector_api.get_sector_rotation(as_of=None, top=3, refresh=False, db=db)
 
@@ -125,6 +130,11 @@ TOOLS: dict[str, Tool] = {
         "get_composite_score",
         "Composite Score 0-100 sebuah saham + breakdown (technical/momentum/volume/volatility/ml).",
         _TICKER_PARAM, _composite_score,
+    ),
+    "get_forecast": Tool(
+        "get_forecast",
+        "Probabilitas return positif 1D/5D/20D sebuah saham + tingkat keyakinan (LOW/MEDIUM/HIGH).",
+        _TICKER_PARAM, _forecast,
     ),
     "get_sector_rotation": Tool(
         "get_sector_rotation",
