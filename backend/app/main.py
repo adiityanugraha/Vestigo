@@ -21,6 +21,7 @@ from app.api import (
     chat,
     compare_strategy,
     correlation,
+    daily_report,
     equity_curve,
     explain,
     explain_score,
@@ -120,6 +121,7 @@ app.include_router(natural_query.router)
 app.include_router(compare_strategy.router)
 app.include_router(portfolio_advisor.router)
 app.include_router(market_summary.router)
+app.include_router(daily_report.router)
 
 
 @app.get("/")

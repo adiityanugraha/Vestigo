@@ -46,3 +46,5 @@ skl2onnx==1.20.0
 # pgvector: tipe kolom vektor untuk SQLAlchemy + ekstensi PostgreSQL (vector store RAG).
 google-genai==2.8.0
 pgvector==0.4.2
+# fpdf2: export PDF AI Daily Report (pure-Python, tanpa dependensi sistem).
+fpdf2==2.8.7
