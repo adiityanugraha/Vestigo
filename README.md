@@ -6,7 +6,7 @@ Screener saham harian **IDX** (Bursa Efek Indonesia) dengan **multi-strategi**
 Carlo, portfolio builder). Proyek ini adalah **monorepo** dua bagian: frontend
 Next.js dan backend FastAPI.
 
-> ⚠️ Proyek edukasi / tugas kuliah. **Bukan nasihat finansial.**
+> ⚠️ Proyek edukasi. **Bukan nasihat finansial.**
 
 ---
 
