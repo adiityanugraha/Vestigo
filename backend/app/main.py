@@ -33,6 +33,7 @@ from app.api import (
     monte_carlo,
     natural_query,
     performance,
+    portfolio_advisor,
     portfolio_builder,
     ranking,
     replay,
@@ -116,6 +117,7 @@ app.include_router(explain_score.router)
 app.include_router(chat.router)
 app.include_router(natural_query.router)
 app.include_router(compare_strategy.router)
+app.include_router(portfolio_advisor.router)
 
 
 @app.get("/")
