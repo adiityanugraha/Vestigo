@@ -30,6 +30,7 @@ from app.api import (
     market_breadth,
     market_data,
     monte_carlo,
+    natural_query,
     performance,
     portfolio_builder,
     ranking,
@@ -112,6 +113,7 @@ app.include_router(sector_rotation.router)
 app.include_router(ai_analysis.router)
 app.include_router(explain_score.router)
 app.include_router(chat.router)
+app.include_router(natural_query.router)
 
 
 @app.get("/")
