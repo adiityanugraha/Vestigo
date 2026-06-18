@@ -5,7 +5,7 @@
 // (default http://localhost:8000). Ticker dikirim TANPA sufiks .JK (backend
 // menyimpan ticker dasar IDX).
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
 /** Buang sufiks .JK & seragamkan huruf besar (frontend pakai "BBCA.JK"). */
@@ -719,4 +719,183 @@ export function postPortfolioBuilder(body: {
   universe: string;
 }): Promise<PortfolioResponse> {
   return apiPost("/api/portfolio-builder", body);
+}
+
+// --- Phase 5: AI Financial Analyst ---------------------------------------- //
+export type AiAnalysisResponse = {
+  ticker: string;
+  date: string | null;
+  confidence: number | null;
+  summary: string | null;
+  bullish_factors: string[];
+  risk_factors: string[];
+  ai_generated: boolean;
+  note: string | null;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string | null;
+};
+
+export type ExplainComponent = {
+  component: string;
+  label: string;
+  score: number;
+  weight: number;
+  effective_weight: number;
+  contribution: number;
+};
+
+export type ExplainScoreResponse = {
+  ticker: string;
+  date: string | null;
+  overall_score: number | null;
+  ml_available: boolean;
+  breakdown: ExplainComponent[];
+  summary: string | null;
+  bullish_factors: string[];
+  risk_factors: string[];
+  ai_generated: boolean;
+  note: string | null;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string | null;
+};
+
+export type CompareStrategyResponse = {
+  strategy_a: string;
+  strategy_b: string;
+  name_a: string | null;
+  name_b: string | null;
+  metrics_a: Record<string, number>;
+  metrics_b: Record<string, number>;
+  comparison: string | null;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string | null;
+};
+
+export type AdvisorAllocation = {
+  ticker: string;
+  weight: number;
+  amount?: number;
+  score?: number;
+  risk_level?: string;
+  sector?: string;
+};
+
+export type PortfolioAdvisorResponse = {
+  risk_profile: string;
+  capital: number;
+  universe: string;
+  n_positions: number;
+  allocations: AdvisorAllocation[];
+  summary: Record<string, unknown>;
+  explanation: string | null;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string | null;
+};
+
+export type MarketSummaryResponse = {
+  date: string | null;
+  summary: string | null;
+  bullish_ratio: number | null;
+  advancers: number | null;
+  decliners: number | null;
+  leading_sectors: string[];
+  lagging_sectors: string[];
+  best_strategy: string | null;
+  disclaimer: string;
+  cached: boolean;
+  generated_at: string | null;
+};
+
+export type DailyReportResponse = {
+  date: string | null;
+  overview: string | null;
+  top_opportunities: { ticker: string; name: string | null; overall_score: number }[];
+  strongest_sector: string | null;
+  weakest_sector: string | null;
+  leading_sectors: string[];
+  lagging_sectors: string[];
+  high_confidence: { ticker: string; prob_5d: number | null; prob_20d: number | null; confidence: string }[];
+  risk_warnings: { ticker: string; risk: string; score: number | null }[];
+  disclaimer: string;
+  cached?: boolean;
+  generated_at: string | null;
+};
+
+export function getAiAnalysis(symbol: string): Promise<AiAnalysisResponse> {
+  return apiGet(`/api/ai-analysis/${bareTicker(symbol)}`);
+}
+
+export function getExplainScore(symbol: string): Promise<ExplainScoreResponse> {
+  return apiGet(`/api/explain-score/${bareTicker(symbol)}`);
+}
+
+export function getCompareStrategy(a: string, b: string): Promise<CompareStrategyResponse> {
+  return apiGet("/api/compare-strategy", { a, b });
+}
+
+export function postPortfolioAdvisor(body: {
+  risk: string;
+  capital: number;
+  universe: string;
+}): Promise<PortfolioAdvisorResponse> {
+  return apiPost("/api/portfolio-advisor", body);
+}
+
+export function getMarketSummary(): Promise<MarketSummaryResponse> {
+  return apiGet("/api/market-summary");
+}
+
+export function getDailyReport(): Promise<DailyReportResponse> {
+  return apiGet("/api/daily-report");
+}
+
+/** URL langsung ke endpoint daily-report (untuk tombol unduh PDF / lihat Markdown). */
+export function dailyReportUrl(format: "pdf" | "markdown"): string {
+  return `${API_BASE_URL}/api/daily-report?format=${format}`;
+}
+
+/**
+ * Chat streaming: kirim pesan, panggil onChunk per potongan teks, kembalikan
+ * teks penuh. session_id digenerate klien (tak perlu baca header respons).
+ */
+export async function streamChat(
+  message: string,
+  sessionId: string,
+  onChunk: (chunk: string) => void,
+): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message, session_id: sessionId, stream: true }),
+    });
+  } catch {
+    throw new Error(`Tidak bisa terhubung ke backend (${API_BASE_URL}).`);
+  }
+  if (!response.ok || !response.body) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const data = (await response.json()) as { detail?: string };
+      if (data?.detail) detail = data.detail;
+    } catch {
+      /* abaikan */
+    }
+    throw new Error(detail);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let full = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    full += chunk;
+    onChunk(chunk);
+  }
+  return full;
 }

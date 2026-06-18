@@ -6,6 +6,7 @@ const navItems = [
   { label: "Screener", href: "/screener" },
   { label: "Strategies", href: "/strategies" },
   { label: "Quant", href: "/quant" },
+  { label: "AI", href: "/ai" },
   { label: "Backtest", href: "/backtest" },
 ];
 
