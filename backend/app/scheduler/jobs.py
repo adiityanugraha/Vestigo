@@ -10,16 +10,22 @@ Dipakai juga sebagai fungsi biasa (mis. saat testing / pemicuan manual).
 from __future__ import annotations
 
 import logging
+import time
 
 from sqlalchemy import select
 
+from app.ai import llm_client
+from app.api import ai_analysis as ai_analysis_api
 from app.api import benchmark as benchmark_api
 from app.api import correlation as correlation_api
+from app.api import daily_report as daily_report_api
 from app.api import forecast as forecast_api
+from app.api import market_summary as market_summary_api
 from app.api import monte_carlo as monte_carlo_api
 from app.api import stock_report
 from app.api import strength as strength_api
 from app.api import walkforward as walkforward_api
+from app.rag import knowledge_base
 from app.api.ranking import CACHE_KEY as RANKING_CACHE_KEY
 from app.api.ranking import run_ranking
 from app.api.screener import run_screener
@@ -45,6 +51,10 @@ log = logging.getLogger("scheduler.jobs")
 SCREENER_LIMIT = 10
 RANKING_LIMIT = 80
 REPORT_USE_ML = True
+
+# Phase 5 — batas & throttle generasi AI (hormati kuota harian Gemini free tier).
+AI_ANALYSIS_LIMIT = 15      # AI Analysis hanya untuk top-N saham per malam
+AI_THROTTLE_SECONDS = 4.0   # jeda antar pemanggilan LLM (hindari rate limit RPM)
 
 
 def _tradable_tickers(db) -> list[str]:
@@ -263,3 +273,66 @@ def job_refresh_walk_forward() -> int:
             warmed += 1
     log.info("refresh_walk_forward: %s strategi di-cache", warmed)
     return warmed
+
+
+# --------------------------------------------------------------------------- #
+# Phase 5 — job malam lapisan AI (SETELAH job quant Phase 4; bergantung outputnya)
+# Urutan: KB embeddings -> AI Analysis -> Market Narrator -> Daily Report.
+# Semua aman-gagal bila AI nonaktif (di-skip) agar pipeline non-AI tak terganggu.
+# --------------------------------------------------------------------------- #
+def job_refresh_knowledge_base() -> int:
+    """20:30 (Phase 5) — re-embed & index knowledge base ke vector store lokal."""
+    if not llm_client.is_available():
+        log.info("refresh_knowledge_base: AI nonaktif, dilewati.")
+        return 0
+    n = knowledge_base.seed()
+    log.info("refresh_knowledge_base: %s dokumen di-embed", n)
+    return n
+
+
+def job_generate_ai_analysis(limit: int = AI_ANALYSIS_LIMIT) -> int:
+    """21:00 (Phase 5) — AI Analysis untuk top-N saham -> ai_reports + cache.
+
+    Dibatasi top-N (peringkat Composite Score) demi kuota free tier, dan
+    di-throttle antar pemanggilan LLM. Mengembalikan jumlah analisis berhasil.
+    """
+    if not llm_client.is_available():
+        log.info("generate_ai_analysis: AI nonaktif, dilewati.")
+        return 0
+    generated = 0
+    with SessionLocal() as db:
+        ranking = run_ranking(db, limit=limit, use_ml=True)
+        tickers = [item["ticker"] for item in ranking.get("items", [])]
+        for index, ticker in enumerate(tickers):
+            try:
+                result = ai_analysis_api.get_ai_analysis(ticker=ticker, refresh=True, db=db)
+                if result.get("ai_generated"):
+                    generated += 1
+            except Exception as exc:  # noqa: BLE001 — satu saham gagal tak boleh hentikan batch
+                log.warning("generate_ai_analysis %s gagal: %s", ticker, exc)
+            if index < len(tickers) - 1:
+                time.sleep(AI_THROTTLE_SECONDS)
+    log.info("generate_ai_analysis: %s/%s analisis dibuat", generated, len(tickers))
+    return generated
+
+
+def job_generate_market_narrative() -> int:
+    """21:30 (Phase 5) — Market Narrator -> market_narratives + cache."""
+    if not llm_client.is_available():
+        log.info("generate_market_narrative: AI nonaktif, dilewati.")
+        return 0
+    with SessionLocal() as db:
+        result = market_summary_api.get_market_summary(refresh=True, db=db)
+    log.info("generate_market_narrative: narasi pasar %s dibuat", result.get("date"))
+    return 1
+
+
+def job_generate_daily_report() -> int:
+    """22:00 (Phase 5) — AI Daily Report -> cache."""
+    if not llm_client.is_available():
+        log.info("generate_daily_report: AI nonaktif, dilewati.")
+        return 0
+    with SessionLocal() as db:
+        daily_report_api.get_daily_report(format="json", refresh=True, db=db)
+    log.info("generate_daily_report: laporan harian dibuat & di-cache")
+    return 1

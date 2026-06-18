@@ -14,6 +14,10 @@ Jadwal (Asia/Jakarta) — Phase 2 + tambahan Phase 3 (Day 13):
   18:00  Performance+Benchmark+Equity  -> job_generate_quant_metrics        (P4)
   19:00  Correlation Matrix            -> job_update_correlation            (P4)
   20:00  Monte Carlo Simulation        -> job_run_monte_carlo               (P4)
+  20:30  Refresh Knowledge Base (RAG)  -> job_refresh_knowledge_base        (P5)
+  21:00  AI Analysis top-N saham       -> job_generate_ai_analysis          (P5)
+  21:30  Market Narrator               -> job_generate_market_narrative     (P5)
+  22:00  AI Daily Report               -> job_generate_daily_report         (P5)
   Sabtu 06:00  Update fundamentals     -> job_update_fundamentals           (P3)
   Sabtu 07:00  Refresh replay returns  -> job_refresh_replay_returns        (P4)
   Sabtu 08:00  Refresh walk-forward    -> job_refresh_walk_forward          (P4)
@@ -54,6 +58,11 @@ SCHEDULE: list[tuple[str, object, int, int, str | None]] = [
     ("quant_metrics_1800", jobs.job_generate_quant_metrics, 18, 0, None),
     ("correlation_1900", jobs.job_update_correlation, 19, 0, None),
     ("monte_carlo_2000", jobs.job_run_monte_carlo, 20, 0, None),
+    # Phase 5 — job malam lapisan AI (setelah quant; urutan = dependency).
+    ("knowledge_base_2030", jobs.job_refresh_knowledge_base, 20, 30, None),
+    ("ai_analysis_2100", jobs.job_generate_ai_analysis, 21, 0, None),
+    ("market_narrative_2130", jobs.job_generate_market_narrative, 21, 30, None),
+    ("daily_report_2200", jobs.job_generate_daily_report, 22, 0, None),
     # Mingguan (Sabtu pagi, pasar tutup).
     ("update_fundamentals_weekly", jobs.job_update_fundamentals, 6, 0, "sat"),
     ("replay_returns_weekly", jobs.job_refresh_replay_returns, 7, 0, "sat"),  # P4
