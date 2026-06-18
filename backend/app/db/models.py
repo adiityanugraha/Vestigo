@@ -547,3 +547,23 @@ class StrategyComparison(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class MarketNarrative(Base):
+    """Narasi kondisi pasar harian (Phase 5 Day 12).
+
+    Rangkuman LLM atas Market Breadth + Sector Rotation + Strategy Benchmark.
+    Satu baris per tanggal (upsert). Di-generate job malam (Day 14).
+    """
+
+    __tablename__ = "market_narratives"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, unique=True, index=True)
+    summary: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
