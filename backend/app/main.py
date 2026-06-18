@@ -19,6 +19,7 @@ from app.api import (
     ai_analysis,
     benchmark,
     chat,
+    compare_strategy,
     correlation,
     equity_curve,
     explain,
@@ -114,6 +115,7 @@ app.include_router(ai_analysis.router)
 app.include_router(explain_score.router)
 app.include_router(chat.router)
 app.include_router(natural_query.router)
+app.include_router(compare_strategy.router)
 
 
 @app.get("/")

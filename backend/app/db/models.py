@@ -523,3 +523,27 @@ class ChatHistory(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class StrategyComparison(Base):
+    """Cache narasi AI Strategy Comparator (Phase 5 Day 10).
+
+    Hanya strategi TEKNIKAL tervalidasi (Phase 4) yang dibandingkan; angka dari
+    strategy_performance, LLM menarasikan tradeoff. Upsert per pasangan (a, b).
+    """
+
+    __tablename__ = "strategy_comparisons"
+    __table_args__ = (
+        UniqueConstraint("strategy_a", "strategy_b", name="uq_strategy_comparisons_pair"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    strategy_a: Mapped[str] = mapped_column(String(32), index=True)
+    strategy_b: Mapped[str] = mapped_column(String(32), index=True)
+    comparison: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
