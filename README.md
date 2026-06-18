@@ -2,9 +2,10 @@
 
 Screener saham harian **IDX** (Bursa Efek Indonesia) dengan **multi-strategi**
 (teknikal & fundamental), prediksi _machine learning_, penjelasan otomatis
-(_Explainable AI_), serta **validasi kuantitatif** (backtest, benchmark, Monte
-Carlo, portfolio builder). Proyek ini adalah **monorepo** dua bagian: frontend
-Next.js dan backend FastAPI.
+(_Explainable AI_), **validasi kuantitatif** (backtest, benchmark, Monte Carlo,
+portfolio builder), serta **lapisan AI Financial Analyst** (analisis, chat, dan
+screener bahasa alami berbasis LLM — _grounded_ ke data sistem). Proyek ini adalah
+**monorepo** dua bagian: frontend Next.js dan backend FastAPI.
 
 > ⚠️ Proyek edukasi. **Bukan nasihat finansial.**
 
@@ -12,7 +13,7 @@ Next.js dan backend FastAPI.
 
 ## Gambaran Besar
 
-Pocket Screener dibangun dalam empat fase:
+Pocket Screener dibangun dalam lima fase:
 
 - **Phase 1 — No-Backend.** Semua perhitungan (fetch data Yahoo, indikator teknikal,
   inferensi ML via ONNX Runtime Web) berjalan **sepenuhnya di browser**. Hasil
@@ -34,6 +35,15 @@ Pocket Screener dibangun dalam empat fase:
   **Risk Exposure** per strategi, **Correlation Matrix**, dan **Portfolio Builder**.
   Hanya **5 strategi teknikal** yang divalidasi historis (fundamental dikecualikan —
   tak ada data _point-in-time_).
+- **Phase 5 — AI Financial Analyst.** Lapisan **LLM bahasa alami** di atas seluruh
+  data Phase 1–4. Prinsip inti **grounding**: LLM hanya **menarasikan** angka dari
+  endpoint/DB sistem (anti-halusinasi — dilarang mengarang angka). Mencakup **AI
+  Analyst Engine**, **Explainable AI 2.0**, **Chat With Stock** (RAG + tool call +
+  streaming), **Natural Language Screener**, **AI Strategy Comparator**, **Portfolio
+  AI Advisor**, **Market Narrator**, dan **AI Daily Report** (ekspor PDF). Provider
+  LLM: **Google Gemini** (`gemini-2.5-flash-lite`); RAG memakai **vector store lokal**
+  (numpy + embedding `gemini-embedding-001`). Setiap output AI wajib menyertakan
+  _disclaimer_.
 
 ```
 ┌─────────────────────────┐         REST/JSON          ┌──────────────────────────┐
@@ -144,8 +154,34 @@ Potential Reversal) atas **histori 10 tahun** yang direkonstruksi _point-in-time
 fundamental** · **07:30 jalankan 9 strategi** · 09:30 & 10:00 & 15:30 screener ·
 16:00 ranking · **16:15 forecast** · **16:30 strength score** · 17:00 AI report ·
 **18:00 performance + benchmark + equity curve** · **19:00 correlation** ·
-**20:00 Monte Carlo** · **Sabtu 06:00 update fundamental · 07:00 refresh trade log
-· 08:00 walk-forward** (mingguan).
+**20:00 Monte Carlo** · **20:30 refresh knowledge base · 21:00 AI Analysis · 21:30
+Market Narrator · 22:00 AI Daily Report** (Phase 5) · **Sabtu 06:00 update
+fundamental · 07:00 refresh trade log · 08:00 walk-forward** (mingguan).
+
+---
+
+### Phase 5 — AI Financial Analyst
+
+Lapisan LLM (**Google Gemini**, free tier) yang **menarasikan** data sistem.
+**Grounding** dijaga ketat: konsep diambil dari **RAG** (knowledge base lokal),
+**angka** diambil _live_ via _tool call_ ke endpoint Phase 1–4 — LLM tak pernah
+mengarang angka. Setiap output menyertakan _disclaimer_.
+
+| Fitur | Endpoint | Keterangan |
+| ----- | -------- | ---------- |
+| **AI Analyst Engine** | `GET /api/ai-analysis/{ticker}` | Ringkasan + bullish/risk factors + confidence (= Composite Score sistem). |
+| **Explainable AI 2.0** | `GET /api/explain-score/{ticker}` | Breakdown kontribusi tiap komponen Composite Score + narasi. |
+| **Chat With Stock** | `POST /api/chat` | Tanya-jawab bahasa alami (RAG + tool call), **streaming**, multi-giliran, scope guardrail. |
+| **Natural Language Screener** | `POST /api/natural-query` | Prompt → filter terstruktur → **engine screener Phase 3 yang eksekusi** (LLM hanya buat filter). |
+| **AI Strategy Comparator** | `GET /api/compare-strategy?a=&b=` | Bandingkan 2 strategi teknikal (metrik Phase 4) + narasi tradeoff. |
+| **Portfolio AI Advisor** | `POST /api/portfolio-advisor` | Alokasi (Portfolio Builder Phase 4) + penjelasan AI kenapa tiap bobot. |
+| **Market Narrator** | `GET /api/market-summary` | Narasi kondisi pasar (breadth + rotasi sektor + benchmark). |
+| **AI Daily Report** | `GET /api/daily-report?format=json\|markdown\|pdf` | Top Opportunities, sektor, high-confidence, risk warning + ekspor **PDF**. |
+
+> Prasyarat **Sector Rotation** (`GET /api/sector-rotation`) — kekuatan relatif &
+> rotasi sektor (1M/3M/6M vs IHSG) — diimplementasikan di Phase 5 (Day 2) karena
+> dipakai AI Analyst & Market Narrator. Generasi batch (analisis/narator/report)
+> dijadwalkan **malam** lalu di-cache; hanya Chat & NL Screener yang _real-time_.
 
 ---
 
@@ -162,6 +198,10 @@ fundamental** · **07:30 jalankan 9 strategi** · 09:30 & 10:00 & 15:30 screener
 - **Quant (`/quant`)** — dashboard validasi kuantitatif Phase 4: **Strategy
   Benchmark** (vs IHSG), **Equity Curve** + **Monte Carlo**, **Risk Exposure**,
   **Correlation Heatmap**, **Market Replay**, dan **Portfolio Builder**.
+- **AI (`/ai`)** — dashboard AI Financial Analyst Phase 5: **Market Narrator**,
+  **AI Daily Report** (+ unduh PDF), **Chat With Stock** (streaming), **AI Analyst**
+  & **Explainable AI 2.0** per saham, **Strategy Comparator**, dan **Portfolio AI
+  Advisor**.
 - **Backtest (`/backtest`)** — winrate, cumulative return, drawdown, metrik model.
 
 ---
@@ -200,6 +240,12 @@ uvicorn app.main:app --reload --port 8000
 > melatih ulang: `pip install scikit-learn skl2onnx` lalu
 > `python -m app.ml.train_forecast` (offline, butuh market_data ≥ 2 tahun).
 
+> **Phase 5 — lapisan AI (opsional).** Set `GEMINI_API_KEY` di `.env` (gratis dari
+> [Google AI Studio](https://aistudio.google.com/apikey)) lalu seed knowledge base
+> RAG: `python -m app.rag.knowledge_base`. Tanpa key, fitur AI nonaktif aman-gagal
+> (endpoint lain tetap jalan). Vector store RAG memakai **file lokal** (numpy), bukan
+> infrastruktur tambahan.
+
 **2. Frontend** (terminal 2)
 
 ```bash
@@ -225,6 +271,7 @@ Buka http://localhost:3000. Frontend membaca `NEXT_PUBLIC_API_BASE_URL`
 | Forecast | 3 model RandomForest terkalibrasi (1D/5D/20D), binary classification P(return > 0) |
 | Explainability | Rule-based (`matched_criteria`) + interpretasi fitur teknikal per-saham |
 | Quant (P4) | numpy · pandas · scipy — backtest, performance metrics, Monte Carlo, korelasi, portfolio |
+| AI (P5) | Google Gemini (`gemini-2.5-flash-lite`) via `google-genai` · embedding `gemini-embedding-001` · RAG vector store lokal (numpy) · fpdf2 (ekspor PDF) |
 | Deploy | Vercel (frontend) · Railway (backend) |
 
 Detail tiap bagian: **[backend/README.md](backend/README.md)** dan
@@ -242,7 +289,10 @@ support/resistance, market breadth, screener history, scheduler), **Phase 3**
 (Strategy Registry 9 strategi, data fundamental, Strategy Matrix, Strength Score,
 Probability Forecast, Explainable AI), & **Phase 4** (rekonstruksi histori
 point-in-time, Market Replay, performance metrics, benchmark, equity curve, Monte
-Carlo, walk-forward, correlation, portfolio builder, Quant dashboard), serta
+Carlo, walk-forward, correlation, portfolio builder, Quant dashboard), & **Phase 5**
+(lapisan AI Financial Analyst: Sector Rotation, RAG + grounding, AI Analyst,
+Explainable AI 2.0, Chat With Stock, NL Screener, Strategy Comparator, Portfolio
+Advisor, Market Narrator, AI Daily Report, AI Analyst Dashboard), serta
 **integrasi frontend ke REST API**, dikerjakan dengan bantuan **Claude
 (Anthropic)** sebagai AI pair-programmer melalui Claude Code — sehingga "Claude"
 tercatat sebagai _contributor_ pada riwayat Git repositori ini.
