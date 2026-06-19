@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AiReportCard } from "./AiReportCard";
 import { CandlestickChart } from "./CandlestickChart";
 import { CompositeScoreCard } from "./CompositeScoreCard";
+import { DailyPicks } from "./DailyPicks";
 import { DashboardShell } from "./DashboardShell";
 import { ExplainPanel } from "./ExplainPanel";
 import { ForecastCard } from "./ForecastCard";
@@ -26,6 +27,11 @@ export function ScreenerView() {
   return (
     <DashboardShell activeNav="Screener" eyebrow="IDX Daily Screener" title="Screener">
       <MarketBreadthCard />
+
+      {/* Lite: pick harian deterministik. Pro: digantikan PredictionPanel (ML + tabel). */}
+      {!pro && (
+        <DailyPicks onSelectSymbol={setSelectedSymbol} selectedSymbol={selectedSymbol} />
+      )}
 
       {pro && (
         <>
