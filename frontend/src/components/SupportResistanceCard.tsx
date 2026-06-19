@@ -2,79 +2,57 @@
 
 import { getSupportResistance } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
-import { CachedBadge, CardError, CardSkeleton } from "./CardStatus";
-
-function price(value: number | null): string {
-  return value === null ? "—" : value.toLocaleString("id-ID", { maximumFractionDigits: 2 });
-}
+import { fmtInt } from "@/lib/format";
+import { useMode } from "./ModeProvider";
+import { VCard } from "./vestigo/Card";
+import { CardError, CardSkeleton } from "./CardStatus";
 
 export function SupportResistanceCard({ symbol }: { symbol: string }) {
-  const { status, data, error, reload } = useApi(() => getSupportResistance(symbol), [symbol]);
+  const { pro } = useMode();
+  const { status, data, error, reload } = useApi(
+    () => getSupportResistance(symbol),
+    [symbol],
+  );
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-white">Support &amp; Resistance</h2>
-          <p className="mt-1 text-xs text-slate-500">{symbol}</p>
-        </div>
-        {data && <CachedBadge cached={data.cached} />}
-      </div>
-
+    <VCard title="Support & Resistance" sub={symbol} cached={!!data?.cached}>
       {status === "loading" && <CardSkeleton lines={4} />}
       {status === "error" && <CardError message={error} onRetry={reload} />}
       {status === "ready" && data && (
-        <div className="space-y-3">
-          {/* Visual: Resistance di atas, harga di tengah, Support di bawah */}
-          <div className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-4 py-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-rose-300">
-                Resistance
-              </span>
-              <span className="font-semibold tabular-nums text-rose-100">
-                {price(data.resistance)}
-              </span>
+        <>
+          <div className="sr-rows">
+            <div className="sr-row sr-res">
+              <span className="sr-label">Resistance</span>
+              <span className="sr-val mono">{fmtInt(data.resistance)}</span>
+            </div>
+            <div className="sr-row sr-now">
+              <span className="sr-label">Harga saat ini</span>
+              <span className="sr-val mono">{fmtInt(data.current)}</span>
+            </div>
+            <div className="sr-row sr-sup">
+              <span className="sr-label">Support</span>
+              <span className="sr-val mono">{fmtInt(data.support)}</span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-sky-400/30 bg-sky-500/10 px-4 py-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-sky-300">
-                Harga saat ini
-              </span>
-              <span className="font-semibold tabular-nums text-sky-100">
-                {price(data.current)}
-              </span>
+          {pro && (
+            <div className="tile-grid-2">
+              <div className="tile">
+                <p className="tile-label">Pivot Point</p>
+                <p className="tile-val mono">{fmtInt(data.methods.pivot.pivot)}</p>
+              </div>
+              <div className="tile">
+                <p className="tile-label">Breakout Zone</p>
+                <p className="tile-val mono">
+                  {data.breakout_zone
+                    ? `${fmtInt(data.breakout_zone.lower)}–${fmtInt(data.breakout_zone.upper)}`
+                    : "—"}
+                </p>
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-emerald-300">
-                Support
-              </span>
-              <span className="font-semibold tabular-nums text-emerald-100">
-                {price(data.support)}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-1 text-sm">
-            <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
-              <p className="text-xs text-slate-500">Pivot Point</p>
-              <p className="mt-1 font-semibold text-slate-100">{price(data.methods.pivot.pivot)}</p>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-slate-950/40 p-3">
-              <p className="text-xs text-slate-500">Breakout Zone</p>
-              <p className="mt-1 font-semibold text-slate-100">
-                {data.breakout_zone
-                  ? `${price(data.breakout_zone.lower)} – ${price(data.breakout_zone.upper)}`
-                  : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
-    </section>
+    </VCard>
   );
 }

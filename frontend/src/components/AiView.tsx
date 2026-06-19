@@ -1,9 +1,11 @@
 "use client";
 
-// AI Analyst Dashboard (Phase 5 Day 15).
-// Menyusun seluruh card lapisan AI di halaman /ai.
+// AI Analyst (Phase 5).
+// Lite = Market Narrator + AI Daily Report + Chat With Stock.
+// Pro  = + AI Analyst per-saham, Explainable AI 2.0, Strategy Comparator, Portfolio Advisor.
 
 import { DashboardShell } from "./DashboardShell";
+import { useMode } from "./ModeProvider";
 import { MarketNarrator } from "./ai/MarketNarrator";
 import { DailyReport } from "./ai/DailyReport";
 import { ChatWithStock } from "./ai/ChatWithStock";
@@ -13,17 +15,24 @@ import { StrategyComparator } from "./ai/StrategyComparator";
 import { PortfolioAdvisor } from "./ai/PortfolioAdvisor";
 
 export function AiView() {
+  const { pro } = useMode();
+
   return (
     <DashboardShell activeNav="AI" eyebrow="AI Financial Analyst" title="AI Analyst">
       <MarketNarrator />
       <DailyReport />
       <ChatWithStock />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <AIAnalysis />
-        <ExplainScore />
-      </div>
-      <StrategyComparator />
-      <PortfolioAdvisor />
+
+      {pro && (
+        <>
+          <div className="grid-2">
+            <AIAnalysis />
+            <ExplainScore />
+          </div>
+          <StrategyComparator />
+          <PortfolioAdvisor />
+        </>
+      )}
     </DashboardShell>
   );
 }

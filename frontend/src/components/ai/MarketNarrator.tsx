@@ -1,61 +1,65 @@
 "use client";
 
-// Market Narrator (Phase 5 Day 15) — ringkasan kondisi pasar harian.
+// Market Narrator (Phase 5) — ringkasan kondisi pasar harian.
 // GET /api/market-summary (auto-load).
 
 import { getMarketSummary } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
-import { CardError, CardSkeleton, CachedBadge } from "../CardStatus";
+import { fmtScore } from "@/lib/format";
+import { VCard } from "../vestigo/Card";
+import { CardError, CardSkeleton } from "../CardStatus";
 
 export function MarketNarrator() {
   const state = useApi(getMarketSummary, []);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <h2 className="text-base font-semibold text-white">Market Narrator</h2>
-        {state.status === "ready" && <CachedBadge cached={state.data.cached} />}
-      </div>
-      <p className="mb-4 text-xs text-slate-500">
-        Ringkasan pasar: breadth, rotasi sektor, dan strategi terbaik.
-      </p>
-
+    <VCard
+      title="Market Narrator"
+      sub="Ringkasan pasar: breadth, rotasi sektor & strategi terbaik"
+      subMono={false}
+      cached={state.status === "ready" && state.data.cached}
+    >
       {state.status === "loading" && <CardSkeleton />}
       {state.status === "error" && <CardError message={state.error} onRetry={state.reload} />}
       {state.status === "ready" && (
-        <div className="space-y-3 text-sm">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-slate-400">
-            {state.data.bullish_ratio != null && (
-              <span>
-                Bullish Ratio:{" "}
-                <span className="font-semibold text-white">
-                  {(state.data.bullish_ratio * 100).toFixed(0)}%
-                </span>
-              </span>
-            )}
+        <>
+          {state.data.summary && <p className="narrator">{state.data.summary}</p>}
+
+          <div className="tile-grid-3">
+            <div className="tile">
+              <p className="tile-label">Bullish ratio</p>
+              <p className="tile-val mono">
+                {state.data.bullish_ratio != null
+                  ? `${fmtScore(state.data.bullish_ratio * 100, 0)}%`
+                  : "—"}
+              </p>
+            </div>
+            <div className="tile">
+              <p className="tile-label">Naik / Turun</p>
+              <p className="tile-val mono">
+                <span className="num-up">{state.data.advancers ?? "—"}</span>
+                <span className="t3"> / </span>
+                <span className="num-down">{state.data.decliners ?? "—"}</span>
+              </p>
+            </div>
+            <div className="tile">
+              <p className="tile-label">Strategi terbaik</p>
+              <p className="tile-val">{state.data.best_strategy ?? "—"}</p>
+            </div>
+          </div>
+
+          <div className="factor-list" style={{ fontSize: 12 }}>
             <span>
-              Naik/Turun:{" "}
-              <span className="font-semibold text-emerald-300">{state.data.advancers ?? "-"}</span>
-              {" / "}
-              <span className="font-semibold text-rose-300">{state.data.decliners ?? "-"}</span>
+              Sektor leading: <span className="num-up">{state.data.leading_sectors.join(", ") || "—"}</span>
             </span>
-            {state.data.best_strategy && (
-              <span>
-                Strategi terbaik:{" "}
-                <span className="font-semibold text-sky-200">{state.data.best_strategy}</span>
-              </span>
-            )}
+            <span>
+              Sektor lagging: <span className="num-down">{state.data.lagging_sectors.join(", ") || "—"}</span>
+            </span>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-400">
-            <span>Sektor leading: {state.data.leading_sectors.join(", ") || "-"}</span>
-            <span>Sektor lagging: {state.data.lagging_sectors.join(", ") || "-"}</span>
-          </div>
-
-          {state.data.summary && <p className="text-slate-200">{state.data.summary}</p>}
-          <p className="text-[11px] leading-relaxed text-slate-500">{state.data.disclaimer}</p>
-        </div>
+          <p className="disclaimer">{state.data.disclaimer}</p>
+        </>
       )}
-    </section>
+    </VCard>
   );
 }

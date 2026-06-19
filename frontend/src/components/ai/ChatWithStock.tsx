@@ -1,10 +1,12 @@
 "use client";
 
-// Chat With Stock (Phase 5 Day 15) — tanya-jawab streaming berbasis data sistem.
+// Chat With Stock (Phase 5) — tanya-jawab streaming berbasis data sistem.
 // session_id digenerate klien; streaming via streamChat().
 
 import { useRef, useState } from "react";
 import { streamChat } from "@/lib/api";
+import { VCard } from "../vestigo/Card";
+import { VestigoLogo } from "../VestigoLogo";
 
 type Msg = { role: "user" | "assistant"; text: string };
 
@@ -39,41 +41,52 @@ export function ChatWithStock() {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengirim pesan");
-      setMessages((m) => m.slice(0, -1)); // buang gelembung assistant kosong
+      setMessages((m) => m.slice(0, -1));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <h2 className="mb-1 text-base font-semibold text-white">Chat With Stock</h2>
-      <p className="mb-4 text-xs text-slate-500">
-        Tanya dalam bahasa alami — mis. &ldquo;Mengapa BBCA score tinggi?&rdquo;, &ldquo;Apakah BMRI overbought?&rdquo;
-      </p>
+    <VCard
+      title="Chat With Stock"
+      sub="Tanya apa saja soal saham IDX"
+      subMono={false}
+      className="chat-card"
+    >
+      {messages.length === 0 ? (
+        <div className="chat-empty">
+          <VestigoLogo size={84} strokeWidth={3.2} className="chat-owl" />
+          <p className="chat-empty-title">Mulai percakapan dengan Vesto</p>
+          <p className="chat-empty-sub">
+            Belum ada percakapan. Coba, mis. &ldquo;Kenapa BBCA score tinggi?&rdquo; atau
+            &ldquo;Apakah BMRI overbought?&rdquo;
+          </p>
+        </div>
+      ) : (
+        <div className="chat-log" style={{ maxHeight: 384, overflowY: "auto" }}>
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className="chat-turn"
+              style={
+                m.role === "user"
+                  ? { background: "var(--accent-tint)", border: "1px solid rgba(193,154,107,0.28)" }
+                  : undefined
+              }
+            >
+              <p className={m.role === "user" ? "chat-q" : "chat-a"}>
+                {m.text || (busy ? "…" : "")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div className="mb-4 max-h-96 space-y-3 overflow-y-auto">
-        {messages.length === 0 && (
-          <p className="text-sm text-slate-500">Belum ada percakapan.</p>
-        )}
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`rounded-lg px-3 py-2 text-sm ${
-              m.role === "user"
-                ? "ml-auto max-w-[85%] bg-sky-500/15 text-sky-100"
-                : "mr-auto max-w-[90%] border border-white/10 bg-white/[0.04] text-slate-200"
-            }`}
-          >
-            <p className="whitespace-pre-wrap">{m.text || (busy ? "…" : "")}</p>
-          </div>
-        ))}
-      </div>
-
-      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
+      {error && <p className="small num-down">{error}</p>}
 
       <form
-        className="flex gap-2"
+        className="field"
         onSubmit={(e) => {
           e.preventDefault();
           void send();
@@ -84,16 +97,12 @@ export function ChatWithStock() {
           onChange={(e) => setInput(e.target.value)}
           disabled={busy}
           placeholder="Tulis pertanyaan…"
-          className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white disabled:opacity-50"
+          className="field-input"
         />
-        <button
-          type="submit"
-          disabled={busy || !input.trim()}
-          className="rounded-lg border border-sky-400/40 bg-sky-500/15 px-4 py-2 text-sm font-medium text-sky-100 transition-colors hover:bg-sky-500/25 disabled:opacity-50"
-        >
+        <button type="submit" disabled={busy || !input.trim()} className="primary-btn">
           {busy ? "…" : "Kirim"}
         </button>
       </form>
-    </section>
+    </VCard>
   );
 }

@@ -10,70 +10,65 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { getMarketData } from "@/lib/api";
+import { fmtPrice, fmtPct } from "@/lib/format";
+import { useMode } from "./ModeProvider";
 
 type CandlestickChartProps = {
   symbol: string;
 };
 
 type ChartState =
-  | { status: "loading"; error: null }
-  | { status: "ready"; error: null }
-  | { status: "error"; error: string };
+  | { status: "loading"; error: null; last: null }
+  | { status: "ready"; error: null; last: { price: number; change: number } | null }
+  | { status: "error"; error: string; last: null };
 
 export function CandlestickChart({ symbol }: CandlestickChartProps) {
+  const { pro } = useMode();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const [state, setState] = useState<ChartState>({
     status: "loading",
     error: null,
+    last: null,
   });
 
   useEffect(() => {
     const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     const chart = createChart(container, {
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#94a3b8",
+        textColor: "#9ca3af",
       },
       grid: {
-        horzLines: { color: "rgba(148, 163, 184, 0.12)" },
-        vertLines: { color: "rgba(148, 163, 184, 0.08)" },
+        horzLines: { color: "rgba(255, 255, 255, 0.05)" },
+        vertLines: { color: "rgba(255, 255, 255, 0.04)" },
       },
-      crosshair: {
-        mode: 1,
-      },
-      rightPriceScale: {
-        borderColor: "rgba(148, 163, 184, 0.18)",
-      },
+      crosshair: { mode: 1 },
+      rightPriceScale: { borderColor: "rgba(255, 255, 255, 0.08)" },
       timeScale: {
-        borderColor: "rgba(148, 163, 184, 0.18)",
+        borderColor: "rgba(255, 255, 255, 0.08)",
         timeVisible: true,
       },
     });
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#10b981",
-      borderUpColor: "#10b981",
-      wickUpColor: "#34d399",
-      downColor: "#fb7185",
-      borderDownColor: "#fb7185",
-      wickDownColor: "#fda4af",
+      upColor: "#22c55e",
+      borderUpColor: "#22c55e",
+      wickUpColor: "#4ade80",
+      downColor: "#ef4444",
+      borderDownColor: "#ef4444",
+      wickDownColor: "#f87171",
     });
     let ignore = false;
 
     chartRef.current = chart;
-    setState({ status: "loading", error: null });
+    setState({ status: "loading", error: null, last: null });
 
     getMarketData(symbol)
       .then((response) => {
-        if (ignore) {
-          return;
-        }
+        if (ignore) return;
 
         const chartData: CandlestickData[] = response.bars
           .filter(
@@ -93,19 +88,29 @@ export function CandlestickChart({ symbol }: CandlestickChartProps) {
 
         series.setData(chartData);
         chart.timeScale().fitContent();
-        setState({ status: "ready", error: null });
+
+        const n = chartData.length;
+        const last =
+          n >= 2
+            ? {
+                price: chartData[n - 1].close,
+                change:
+                  ((chartData[n - 1].close - chartData[n - 2].close) /
+                    chartData[n - 2].close) *
+                  100,
+              }
+            : n === 1
+              ? { price: chartData[0].close, change: 0 }
+              : null;
+
+        setState({ status: "ready", error: null, last });
       })
       .catch((error: unknown) => {
-        if (ignore) {
-          return;
-        }
-
+        if (ignore) return;
         setState({
           status: "error",
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to load chart data",
+          error: error instanceof Error ? error.message : "Gagal memuat data chart",
+          last: null,
         });
       });
 
@@ -117,41 +122,69 @@ export function CandlestickChart({ symbol }: CandlestickChartProps) {
   }, [symbol]);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <div className="mb-5 flex items-center justify-between">
+    <section className="card">
+      <div className="card-head">
         <div>
-          <h2 className="text-base font-semibold text-white">Candlestick</h2>
-          <p className="mt-1 text-xs text-slate-500">{symbol}</p>
+          <h2 className="card-title">{symbol} · Candlestick</h2>
+          <p className="card-sub mono">
+            {pro ? "Daily OHLCV · 60 sesi terakhir" : "60 sesi terakhir"}
+          </p>
         </div>
-        <span className="rounded-md border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-400">
-          Daily OHLCV
-        </span>
+        <div className="chart-ctrls">
+          {pro ? (
+            <>
+              <button className="ghost-btn ghost-on">Daily OHLCV</button>
+              <button className="ghost-btn">MA</button>
+              <button className="ghost-btn">Volume</button>
+            </>
+          ) : (
+            <button className="ghost-btn ghost-on">Daily</button>
+          )}
+        </div>
       </div>
-      <div className="relative h-80 min-h-80 overflow-hidden rounded-lg border border-white/10 bg-slate-950/40">
+
+      {state.status === "ready" && state.last && (
+        <div className="price-strip">
+          <span className="price-big mono">{fmtPrice(state.last.price)}</span>
+          <span
+            className={`price-chg mono ${
+              state.last.change > 0 ? "num-up" : state.last.change < 0 ? "num-down" : ""
+            }`}
+          >
+            {fmtPct(state.last.change)}
+          </span>
+        </div>
+      )}
+
+      <div
+        className="relative overflow-hidden"
+        style={{
+          height: pro ? 320 : 280,
+          borderRadius: "var(--r-tile)",
+          background: "var(--s2)",
+        }}
+      >
         <div className="absolute inset-0" ref={containerRef} />
 
         {state.status === "loading" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70">
-            <div className="w-52">
-              <p className="text-center text-sm text-slate-300">
-                Loading chart
-              </p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-2/3 animate-pulse rounded-full bg-sky-400/70" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div style={{ width: 208 }}>
+              <p className="ta-c small t2">Memuat chart…</p>
+              <div className="riskbar mt">
+                <div
+                  className="riskbar-fill"
+                  style={{ width: "66%", background: "var(--accent)" }}
+                />
               </div>
             </div>
           </div>
         )}
 
         {state.status === "error" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 p-6 text-center">
-            <div>
-              <p className="text-sm font-medium text-rose-200">
-                Chart data failed
-              </p>
-              <p className="mt-2 max-w-md text-sm text-rose-100/70">
-                {state.error}
-              </p>
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div className="empty-state">
+              <p style={{ color: "var(--down)", fontWeight: 500 }}>Gagal memuat chart.</p>
+              <p className="small mt">{state.error}</p>
             </div>
           </div>
         )}

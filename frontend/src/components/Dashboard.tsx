@@ -7,7 +7,8 @@ import { RiskMeterCard } from "./RiskMeterCard";
 import { SupportResistanceCard } from "./SupportResistanceCard";
 
 // Dashboard menampilkan KONTEKS PASAR: IHSG (Indeks Harga Saham Gabungan).
-// Simbol dikunci ke IHSG — chart, AI report, risk meter, dan support/resistance.
+// Simbol dikunci ke IHSG — chart, verdict AI, risk meter, dan support/resistance.
+// Kartu menyesuaikan kedalaman sendiri lewat useMode (Lite vs Pro).
 const IHSG_SYMBOL = "IHSG";
 
 export function Dashboard() {
@@ -17,15 +18,13 @@ export function Dashboard() {
       eyebrow="IDX Market Context"
       title="IHSG · Indeks Harga Saham Gabungan"
     >
-      <section className="grid gap-6">
-        <CandlestickChart symbol={IHSG_SYMBOL} />
-      </section>
+      <CandlestickChart symbol={IHSG_SYMBOL} />
 
-      <section className="grid gap-6 lg:grid-cols-3">
+      <div className="grid-3">
         <AiReportCard symbol={IHSG_SYMBOL} />
         <RiskMeterCard symbol={IHSG_SYMBOL} />
         <SupportResistanceCard symbol={IHSG_SYMBOL} />
-      </section>
+      </div>
     </DashboardShell>
   );
 }
