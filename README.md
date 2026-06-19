@@ -1,11 +1,13 @@
-# Pocket Screener
+# Vestigo
 
-Screener saham harian **IDX** (Bursa Efek Indonesia) dengan **multi-strategi**
-(teknikal & fundamental), prediksi _machine learning_, penjelasan otomatis
-(_Explainable AI_), **validasi kuantitatif** (backtest, benchmark, Monte Carlo,
-portfolio builder), serta **lapisan AI Financial Analyst** (analisis, chat, dan
-screener bahasa alami berbasis LLM — _grounded_ ke data sistem). Proyek ini adalah
-**monorepo** dua bagian: frontend Next.js dan backend FastAPI.
+**Vestigo** (Latin: _"aku menelusuri/melacak jejak"_) adalah screener saham harian
+**IDX** (Bursa Efek Indonesia) dengan **multi-strategi** (teknikal & fundamental),
+prediksi _machine learning_, penjelasan otomatis (_Explainable AI_), **validasi
+kuantitatif** (backtest, benchmark, Monte Carlo, portfolio builder), serta **lapisan
+AI Financial Analyst** (analisis, chat, dan screener bahasa alami berbasis LLM —
+_grounded_ ke data sistem). UI bertema **"quiet trading terminal"** gelap dengan
+sistem **mode Lite / Pro**. Proyek ini adalah **monorepo** dua bagian: frontend
+Next.js dan backend FastAPI.
 
 > ⚠️ Proyek edukasi. **Bukan nasihat finansial.**
 
@@ -13,7 +15,8 @@ screener bahasa alami berbasis LLM — _grounded_ ke data sistem). Proyek ini ad
 
 ## Gambaran Besar
 
-Pocket Screener dibangun dalam lima fase:
+Vestigo dibangun dalam lima fase (lalu di-_rebrand_ & _redesign_ — lihat
+[Tampilan & Mode Lite/Pro](#tampilan--vestigo--mode-litepro)):
 
 - **Phase 1 — No-Backend.** Semua perhitungan (fetch data Yahoo, indikator teknikal,
   inferensi ML via ONNX Runtime Web) berjalan **sepenuhnya di browser**. Hasil
@@ -75,6 +78,28 @@ Pocket Screener dibangun dalam lima fase:
                                  equity_curve,
                                  correlation_matrix, portfolio
 ```
+
+---
+
+## Tampilan — Vestigo & Mode Lite/Pro
+
+Desain mengikuti _handoff_ Claude Design: tema gelap **"quiet trading terminal"** —
+tenang, padat-informasi, warna **hanya untuk makna** (hijau naik · merah turun ·
+risiko). Tipografi **Inter** (UI) + **JetBrains Mono** dengan _tabular figures_ untuk
+**semua angka** (harga, persen, skor, volume) sebagai _signature_ aplikasi; aksen
+**bronze** `#C19A6B` di atas latar `#111111`, border tipis, tanpa gradient/shadow tebal.
+
+Satu **toggle Lite / Pro** mengatur kedalaman setiap halaman:
+
+- **Lite** — menjawab _"apa & seberapa yakin"_: 3 menu (**Dashboard · Screener · AI**),
+  permukaan ringkas yang sudah dikurasi & langsung bisa ditindaklanjuti. Default untuk
+  pengguna baru.
+- **Pro** — menjawab _"kenapa, seberapa terbukti, bagaimana menyusunnya"_: 6 menu
+  (**+ Strategies · Quant · Backtest**) dan seluruh kedalaman analitik & angka mentah.
+
+Berpindah mode me-_reflow_ navigasi & konten (bukan sekadar menyembunyikan elemen),
+preferensi disimpan di `localStorage`, dan transisinya menghormati
+`prefers-reduced-motion`. Setiap output AI tetap menyertakan _disclaimer_ wajib.
 
 ---
 
@@ -187,6 +212,10 @@ mengarang angka. Setiap output menyertakan _disclaimer_.
 
 ## Halaman Frontend
 
+Navigasi & kedalaman tiap halaman mengikuti **mode Lite/Pro** (lihat
+[Tampilan & Mode Lite/Pro](#tampilan--vestigo--mode-litepro)) — **Strategies**,
+**Quant**, dan **Backtest** hanya muncul di mode **Pro**.
+
 - **Dashboard (`/`)** — konteks pasar **IHSG** (Indeks Harga Saham Gabungan):
   candlestick + AI Report + Risk Meter + Support/Resistance. Simbol terkunci ke IHSG.
 - **Screener (`/screener`)** — Market Breadth, tabel screener BSJP/BPJS, chart &
@@ -263,7 +292,7 @@ Buka http://localhost:3000. Frontend membaca `NEXT_PUBLIC_API_BASE_URL`
 
 | Area | Teknologi |
 | ---- | --------- |
-| Frontend | Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Lightweight-charts · Recharts |
+| Frontend | Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Lightweight-charts · Recharts · design tokens "Vestigo" (mode Lite/Pro) · font Inter + JetBrains Mono |
 | Backend | FastAPI · SQLAlchemy 2.0 · APScheduler · httpx |
 | Database | PostgreSQL (Neon) |
 | Cache | Redis (Upstash) |
@@ -292,8 +321,10 @@ point-in-time, Market Replay, performance metrics, benchmark, equity curve, Mont
 Carlo, walk-forward, correlation, portfolio builder, Quant dashboard), & **Phase 5**
 (lapisan AI Financial Analyst: Sector Rotation, RAG + grounding, AI Analyst,
 Explainable AI 2.0, Chat With Stock, NL Screener, Strategy Comparator, Portfolio
-Advisor, Market Narrator, AI Daily Report, AI Analyst Dashboard), serta
-**integrasi frontend ke REST API**, dikerjakan dengan bantuan **Claude
+Advisor, Market Narrator, AI Daily Report, AI Analyst Dashboard), **integrasi
+frontend ke REST API**, serta **redesign & rebranding Vestigo** (design system bronze
+"quiet trading terminal", mode Lite/Pro, dari _handoff_ Claude Design), dikerjakan
+dengan bantuan **Claude
 (Anthropic)** sebagai AI pair-programmer melalui Claude Code — sehingga "Claude"
 tercatat sebagai _contributor_ pada riwayat Git repositori ini.
 
