@@ -34,13 +34,6 @@ const NAV_ITEMS: NavItem[] = [
 
 const PRO_ONLY_PATHS = NAV_ITEMS.filter((i) => !i.lite).map((i) => i.href);
 
-// Top-bar context chips (4.2). Mode toggle is the prominent leftmost control.
-const CONTEXT_CHIPS = [
-  { label: "BSJP", value: "Top 5", tone: "chip-up" },
-  { label: "BPJS", value: "Top 5", tone: "chip-info" },
-  { label: "Timeframe", value: "Daily", tone: "chip-warn" },
-];
-
 const DISCLAIMER_TEXT =
   "Alat bantu analisis & edukasi, BUKAN nasihat keuangan. Keputusan investasi tanggung jawab Anda.";
 const CACHE_DATE = "2026-06-15";
@@ -199,12 +192,6 @@ export function DashboardShell({
           </div>
           <div className="topbar-ctrls">
             <ModeToggle mode={mode} onChange={handleModeChange} />
-            {CONTEXT_CHIPS.map((chip) => (
-              <div className="chip" key={chip.label}>
-                <span className="chip-label">{chip.label}</span>
-                <span className={`chip-val mono ${chip.tone}`}>{chip.value}</span>
-              </div>
-            ))}
           </div>
         </header>
 

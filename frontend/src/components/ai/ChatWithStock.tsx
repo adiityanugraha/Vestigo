@@ -56,7 +56,7 @@ export function ChatWithStock() {
     >
       {messages.length === 0 ? (
         <div className="chat-empty">
-          <VestigoLogo size={84} strokeWidth={3.2} className="chat-owl" />
+          <VestigoLogo size={84} className="chat-owl" />
           <p className="chat-empty-title">Mulai percakapan dengan Vesto</p>
           <p className="chat-empty-sub">
             Belum ada percakapan. Coba, mis. &ldquo;Kenapa BBCA score tinggi?&rdquo; atau
