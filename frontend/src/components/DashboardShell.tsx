@@ -167,10 +167,13 @@ export function DashboardShell({
         </nav>
 
         <div className="side-foot">
-          <div className="avatar">N</div>
+          <div className="avatar">
+            <VestigoLogo size={20} />
+          </div>
           <div className="side-foot-txt">
-            <p>© 2026 Anak Agung Aryadipa</p>
-            <p className="t3">Aditya Nugraha · All rights reserved</p>
+            <p>© 2026</p>
+            <p>Anak Agung Aryadipa Aditya Nugraha</p>
+            <p>All rights reserved</p>
           </div>
         </div>
       </aside>

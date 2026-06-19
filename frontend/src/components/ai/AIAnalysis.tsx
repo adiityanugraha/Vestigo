@@ -96,6 +96,10 @@ export function AIAnalysis() {
               </ul>
             </div>
           )}
+          <p className="feature-note">
+            Analisis satu saham — ringkasan, faktor bullish & risiko — dengan confidence
+            dari Composite Score sistem.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

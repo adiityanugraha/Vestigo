@@ -82,6 +82,9 @@ export function CorrelationHeatmap() {
               ))}
             </div>
           </div>
+          <p className="feature-note">
+            Seberapa seragam pergerakan saham LQ45 — bantu hindari konsentrasi risiko.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}

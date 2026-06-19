@@ -106,6 +106,9 @@ export function DailyReport() {
             </div>
           )}
 
+          <p className="feature-note">
+            Ringkasan harian: saham skor teratas, sektor terkuat/terlemah, dan peringatan risiko.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

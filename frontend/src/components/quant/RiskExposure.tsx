@@ -64,6 +64,9 @@ export function RiskExposure() {
               </tbody>
             </table>
           </div>
+          <p className="feature-note">
+            Profil risiko tiap strategi — volatilitas, beta, max drawdown, dan losing streak.
+          </p>
           <p className="disclaimer">{data[0]?.disclaimer}</p>
         </>
       )}

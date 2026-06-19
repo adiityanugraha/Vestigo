@@ -132,6 +132,9 @@ export function PortfolioBuilder() {
               </tbody>
             </table>
           </div>
+          <p className="feature-note">
+            Menyusun alokasi otomatis dari skor, risiko, dan korelasi sesuai profil risiko.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

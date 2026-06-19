@@ -118,6 +118,9 @@ export function PortfolioAdvisor() {
           {state.data.explanation && (
             <p className="narrator" style={{ fontSize: 14 }}>{state.data.explanation}</p>
           )}
+          <p className="feature-note">
+            Saran alokasi portofolio sesuai profil risiko Anda, beserta alasan tiap bobot.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

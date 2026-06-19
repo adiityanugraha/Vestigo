@@ -107,6 +107,9 @@ export function MarketReplay() {
               ))}
             </div>
           )}
+          <p className="feature-note">
+            Memutar ulang kandidat screening pada tanggal lampau dan performanya setelah itu.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}

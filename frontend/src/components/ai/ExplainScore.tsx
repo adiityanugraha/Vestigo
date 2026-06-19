@@ -97,6 +97,10 @@ export function ExplainScore() {
           </div>
 
           {state.data.summary && <p className="narrator" style={{ fontSize: 14 }}>{state.data.summary}</p>}
+          <p className="feature-note">
+            Menjabarkan kontribusi tiap komponen (teknikal, momentum, ML) terhadap
+            Composite Score saham.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

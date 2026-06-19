@@ -57,6 +57,9 @@ export function MarketNarrator() {
             </span>
           </div>
 
+          <p className="feature-note">
+            Rangkuman arah pasar IDX hari ini dari breadth, rotasi sektor, dan strategi terbaik.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

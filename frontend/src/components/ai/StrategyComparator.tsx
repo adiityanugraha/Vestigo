@@ -100,6 +100,10 @@ export function StrategyComparator() {
             </table>
           </div>
           {state.data.comparison && <p className="narrator" style={{ fontSize: 14 }}>{state.data.comparison}</p>}
+          <p className="feature-note">
+            Membandingkan metrik historis dua strategi teknikal untuk melihat tradeoff
+            imbal hasil & risiko.
+          </p>
           <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}

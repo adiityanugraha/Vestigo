@@ -163,6 +163,9 @@ export function EquityCurveChart() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          <p className="feature-note">
+            Simulasi pertumbuhan modal Rp 100 jt bila mengikuti strategi ini, beserta drawdown-nya.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}

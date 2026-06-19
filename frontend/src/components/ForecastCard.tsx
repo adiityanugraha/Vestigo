@@ -71,6 +71,10 @@ export function ForecastCard({ symbol }: { symbol: string }) {
               <ProbRow key={key} label={label} value={data.prob[key]} />
             ))}
           </div>
+          <p className="feature-note">
+            Peluang harga ditutup naik pada tiap horizon menurut model ML — di atas
+            50% condong menguat.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}

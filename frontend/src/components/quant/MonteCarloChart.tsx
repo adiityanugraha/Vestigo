@@ -117,6 +117,9 @@ export function MonteCarloChart() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="feature-note">
+            Ribuan simulasi acak memperkirakan sebaran kemungkinan hasil 1 tahun strategi ini.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}

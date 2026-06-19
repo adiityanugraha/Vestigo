@@ -66,6 +66,9 @@ export function StrategyBenchmark() {
               </tbody>
             </table>
           </div>
+          <p className="feature-note">
+            Membandingkan performa 5 strategi teknikal terhadap IHSG selama ~5 tahun.
+          </p>
           <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}
