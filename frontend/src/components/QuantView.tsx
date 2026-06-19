@@ -1,7 +1,6 @@
 "use client";
 
-// Quant Analytics Dashboard (Phase 4 Day 14-15).
-// Menyusun seluruh card validasi kuantitatif di halaman /quant.
+// Quant Analytics Dashboard (Phase 4, Pro-only page).
 
 import { DashboardShell } from "./DashboardShell";
 import { StrategyBenchmark } from "./quant/StrategyBenchmark";
@@ -14,13 +13,9 @@ import { PortfolioBuilder } from "./quant/PortfolioBuilder";
 
 export function QuantView() {
   return (
-    <DashboardShell
-      activeNav="Quant"
-      eyebrow="Quant Research Platform"
-      title="Quant Analytics"
-    >
+    <DashboardShell activeNav="Quant" eyebrow="Quant Research Platform" title="Quant Analytics">
       <StrategyBenchmark />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid-2">
         <EquityCurveChart />
         <MonteCarloChart />
       </div>

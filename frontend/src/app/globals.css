@@ -1049,6 +1049,356 @@ select {
   }
 }
 
+/* ============================================================
+   Component layer (Pro) — tables, matrix, gauge, forecast, etc.
+   Ported from the Vestigo.html prototype.
+   ============================================================ */
+
+/* ---------- data table ---------- */
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dtable th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t3);
+  font-weight: 500;
+  text-align: left;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--bd);
+  white-space: nowrap;
+}
+.dtable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bd);
+  color: var(--t1);
+}
+.dtable tbody tr:last-child td {
+  border-bottom: none;
+}
+.row-click {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.row-click:hover {
+  background: var(--s3);
+}
+.row-sel {
+  background: var(--accent-tint);
+}
+.tk-pill {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--bd2);
+  color: var(--t1);
+}
+.tk-sel {
+  background: var(--accent-tint);
+  border-color: rgba(193, 154, 107, 0.4);
+  color: var(--accent);
+}
+
+/* ---------- select ---------- */
+.select {
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--t1);
+  font-size: 14px;
+}
+.select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cmp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- chips (strategy selector) ---------- */
+.pill-chip {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid var(--bd);
+  background: var(--s2);
+  color: var(--t2);
+  padding: 7px 14px;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+.pill-chip:hover {
+  border-color: var(--bd2);
+  color: var(--t1);
+}
+.pill-on {
+  border-color: rgba(193, 154, 107, 0.45);
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ---------- strategy matrix ---------- */
+.matrix-wrap {
+  overflow-x: auto;
+}
+.matrix {
+  min-width: 640px;
+}
+.matrix th,
+.matrix td {
+  padding: 9px 10px;
+}
+.mx-sticky {
+  position: sticky;
+  left: 0;
+  background: var(--s1);
+  z-index: 2;
+}
+.matrix thead .mx-sticky {
+  background: var(--s1);
+}
+.mx-cell {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.mx-pass {
+  background: var(--up-tint);
+  color: var(--up);
+}
+.mx-fail {
+  background: var(--s2);
+  color: var(--t3);
+}
+.mx-na {
+  color: var(--t3);
+}
+
+/* ---------- circular gauge (strength) ---------- */
+.gauge-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.gauge-num {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 500;
+}
+.gauge-max {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.gauge-meta {
+  text-align: center;
+}
+.contrib-list {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.contrib-list li {
+  display: grid;
+  grid-template-columns: 1fr auto 70px auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.contrib-label {
+  color: var(--t2);
+}
+.contrib-track {
+  height: 6px;
+  background: var(--s2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.contrib-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+.contrib-v {
+  font-size: 13px;
+  text-align: right;
+}
+
+/* ---------- forecast bars ---------- */
+.fc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fc-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 70px;
+  align-items: center;
+  gap: 12px;
+}
+.fc-label {
+  font-size: 13px;
+  color: var(--t2);
+}
+.fc-track {
+  position: relative;
+  height: 8px;
+  background: var(--s2);
+  border-radius: 999px;
+}
+.fc-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+}
+.fc-up {
+  background: var(--up);
+}
+.fc-down {
+  background: var(--down);
+}
+.fc-val {
+  font-size: 13px;
+  text-align: right;
+}
+
+/* ---------- explainable AI ---------- */
+.xai-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 700px) {
+  .xai-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.why-criteria {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd);
+}
+.why-pill {
+  font-size: 12px;
+  font-family: var(--mono);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--bd2);
+}
+.why-pass {
+  background: var(--up-tint);
+  color: var(--up);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+.why-na {
+  background: var(--s2);
+  color: var(--t3);
+}
+
+/* ---------- ml summary / winrate boxes ---------- */
+.ml-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .ml-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.wr-box {
+  background: var(--s2);
+  border-radius: var(--r-tile);
+  padding: 16px;
+}
+
+/* ---------- correlation heatmap ---------- */
+.corr-grid {
+  display: grid;
+  gap: 3px;
+}
+.corr-head {
+  font-size: 11px;
+  color: var(--t3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.corr-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--t1);
+}
+
+/* ---------- beat badge / detail / features ---------- */
+.beat-badge {
+  font-size: 10px;
+  color: var(--up);
+  background: var(--up-tint);
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  font-family: var(--mono);
+}
+.detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px dashed var(--bd2);
+  border-radius: var(--r-card);
+  background: rgba(193, 154, 107, 0.02);
+}
+.feat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.feat-chip {
+  font-size: 11px;
+  color: var(--t2);
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   html {

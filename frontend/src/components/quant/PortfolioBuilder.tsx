@@ -1,10 +1,12 @@
 "use client";
 
-// Portfolio Builder (Phase 4 Day 15).
-// Input profil risiko + modal -> POST /api/portfolio-builder -> alokasi bobot.
+// Portfolio Builder (Phase 4). Input profil risiko + modal -> alokasi bobot.
+// POST /api/portfolio-builder.
 
 import { useState } from "react";
 import { postPortfolioBuilder, type PortfolioResponse } from "@/lib/api";
+import { fmtScore, fmtValue } from "@/lib/format";
+import { VCard } from "../vestigo/Card";
 import { CardError } from "../CardStatus";
 
 const PROFILES = [
@@ -13,11 +15,12 @@ const PROFILES = [
   { key: "AGGRESSIVE", label: "Aggressive" },
 ];
 
-const LEVEL_TONE: Record<string, string> = {
-  LOW: "text-emerald-300",
-  MEDIUM: "text-amber-300",
-  HIGH: "text-rose-300",
-};
+function levelClass(level: string): string {
+  if (level === "LOW") return "num-up";
+  if (level === "HIGH") return "num-down";
+  if (level === "MEDIUM") return "chip-warn";
+  return "t2";
+}
 
 type State =
   | { status: "idle" }
@@ -44,120 +47,94 @@ export function PortfolioBuilder() {
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <h2 className="mb-1 text-base font-semibold text-white">Portfolio Builder</h2>
-      <p className="mb-4 text-xs text-slate-500">
-        Susun alokasi otomatis (skor + risiko + diversifikasi) sesuai profil risiko.
-      </p>
-
-      <div className="mb-4 flex flex-wrap items-end gap-4">
+    <VCard
+      title="Portfolio Builder"
+      sub="Alokasi otomatis (skor + risiko + diversifikasi) sesuai profil risiko"
+      subMono={false}
+    >
+      <div className="cmp-row" style={{ alignItems: "flex-end" }}>
         <div>
-          <p className="mb-1 text-xs text-slate-400">Profil risiko</p>
-          <div className="flex gap-2">
+          <p className="chip-label" style={{ marginBottom: 6 }}>
+            Profil risiko
+          </p>
+          <div className="cmp-row">
             {PROFILES.map((p) => (
               <button
                 key={p.key}
                 type="button"
                 onClick={() => setRisk(p.key)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                  risk === p.key
-                    ? "border-sky-400/40 bg-sky-500/15 text-sky-200"
-                    : "border-white/10 text-slate-400 hover:bg-white/5"
-                }`}
+                className={`pill-chip ${risk === p.key ? "pill-on" : ""}`}
               >
                 {p.label}
               </button>
             ))}
           </div>
         </div>
-        <div>
-          <p className="mb-1 text-xs text-slate-400">Modal (Rp)</p>
-          <input
-            type="number"
-            value={capital}
-            min={1_000_000}
-            step={10_000_000}
-            onChange={(e) => setCapital(Number(e.target.value) || 0)}
-            className="w-44 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm text-white"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={build}
-          disabled={state.status === "loading"}
-          className="rounded-lg border border-sky-400/40 bg-sky-500/15 px-4 py-1.5 text-sm font-medium text-sky-100 transition-colors hover:bg-sky-500/25 disabled:opacity-50"
-        >
+        <input
+          type="number"
+          value={capital}
+          min={1_000_000}
+          step={10_000_000}
+          onChange={(e) => setCapital(Number(e.target.value) || 0)}
+          className="field-input flex1"
+          style={{ minWidth: 160 }}
+          placeholder="Modal (Rp)"
+        />
+        <button type="button" onClick={build} disabled={state.status === "loading"} className="primary-btn">
           {state.status === "loading" ? "Menyusun…" : "Bangun Portofolio"}
         </button>
       </div>
 
-      {state.status === "error" && (
-        <CardError message={state.error} onRetry={build} />
-      )}
+      {state.status === "error" && <CardError message={state.error} onRetry={build} />}
       {state.status === "ready" && (
         <>
-          <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <span className="text-slate-400">
-              Posisi: <span className="font-semibold text-white">{state.data.n_positions}</span>
-            </span>
-            <span className="text-slate-400">
-              Risiko portofolio:{" "}
-              <span
-                className={`font-semibold ${
-                  LEVEL_TONE[state.data.summary.portfolio_risk_level] ?? "text-slate-200"
-                }`}
-              >
+          <div className="tile-grid-3">
+            <div className="tile">
+              <p className="tile-label">Posisi</p>
+              <p className="tile-val mono">{state.data.n_positions}</p>
+            </div>
+            <div className="tile">
+              <p className="tile-label">Risiko portofolio</p>
+              <p className={`tile-val mono ${levelClass(state.data.summary.portfolio_risk_level)}`}>
                 {state.data.summary.portfolio_risk_level}
-              </span>
-            </span>
-            <span className="text-slate-400">
-              Korelasi rata²:{" "}
-              <span className="font-semibold text-white">
-                {state.data.summary.avg_correlation.toFixed(2)}
-              </span>
-            </span>
+              </p>
+            </div>
+            <div className="tile">
+              <p className="tile-label">Korelasi rata²</p>
+              <p className="tile-val mono">{fmtScore(state.data.summary.avg_correlation, 2)}</p>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="table-wrap">
+            <table className="dtable">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-slate-500">
-                  <th className="py-2 pr-3 text-left font-medium">Saham</th>
-                  <th className="py-2 px-3 text-right font-medium">Bobot</th>
-                  <th className="py-2 px-3 text-right font-medium">Alokasi</th>
-                  <th className="py-2 px-3 text-right font-medium">Skor</th>
-                  <th className="py-2 pl-3 text-right font-medium">Risiko</th>
+                <tr>
+                  <th>Saham</th>
+                  <th className="ta-r">Bobot</th>
+                  <th className="ta-r">Alokasi</th>
+                  <th className="ta-r">Skor</th>
+                  <th className="ta-r">Risiko</th>
                 </tr>
               </thead>
               <tbody>
                 {state.data.allocations.map((a) => (
-                  <tr key={a.ticker} className="border-t border-white/5">
-                    <td className="py-2 pr-3 text-left">
-                      <span className="font-medium text-white">{a.ticker}</span>
-                      {a.sector && (
-                        <span className="ml-2 text-xs text-slate-500">{a.sector}</span>
-                      )}
+                  <tr key={a.ticker}>
+                    <td>
+                      <span className="tk-pill">{a.ticker}</span>
+                      {a.sector && <span className="card-sub"> {a.sector}</span>}
                     </td>
-                    <td className="py-2 px-3 text-right tabular-nums text-sky-200">
-                      {(a.weight * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-2 px-3 text-right tabular-nums text-slate-200">
-                      Rp {a.amount.toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-2 px-3 text-right tabular-nums text-slate-200">
-                      {a.score.toFixed(0)}
-                    </td>
-                    <td className={`py-2 pl-3 text-right font-medium ${LEVEL_TONE[a.risk_level] ?? "text-slate-300"}`}>
-                      {a.risk_level}
-                    </td>
+                    <td className="ta-r mono chip-info">{fmtScore(a.weight * 100, 1)}%</td>
+                    <td className="ta-r mono">{fmtValue(a.amount)}</td>
+                    <td className="ta-r mono">{fmtScore(a.score, 0)}</td>
+                    <td className={`ta-r mono ${levelClass(a.risk_level)}`}>{a.risk_level}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">{state.data.disclaimer}</p>
+          <p className="disclaimer">{state.data.disclaimer}</p>
         </>
       )}
-    </section>
+    </VCard>
   );
 }

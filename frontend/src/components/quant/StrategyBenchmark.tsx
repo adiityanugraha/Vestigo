@@ -1,57 +1,33 @@
 "use client";
 
-// Strategy Benchmark (Phase 4 Day 14).
-// Tabel metrik seluruh strategi tervalidasi + baris pembanding IHSG dari
+// Strategy Benchmark (Phase 4) — metrik seluruh strategi tervalidasi + IHSG.
 // GET /api/benchmark. Menandai strategi yang mengalahkan pasar.
 
 import { getBenchmark, type BenchmarkRow } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
-import { CachedBadge, CardError, CardSkeleton } from "../CardStatus";
+import { fmtPctFromFraction, fmtScore } from "@/lib/format";
+import { VCard } from "../vestigo/Card";
+import { CardError, CardSkeleton } from "../CardStatus";
 
-function pct(value: number): string {
-  return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`;
-}
-
-function toneFor(value: number): string {
-  if (value > 0) return "text-emerald-300";
-  if (value < 0) return "text-rose-300";
-  return "text-slate-300";
+function pctClass(value: number): string {
+  if (value > 0) return "num-up";
+  if (value < 0) return "num-down";
+  return "";
 }
 
 function Row({ row, market }: { row: BenchmarkRow; market: boolean }) {
   const m = row.metrics;
-  const beats = row.beats_market_cagr;
   return (
-    <tr
-      className={
-        market
-          ? "border-t border-white/15 bg-white/[0.04] font-medium"
-          : "border-t border-white/5"
-      }
-    >
-      <td className="py-2 pr-3 text-left">
-        <div className="flex items-center gap-2">
-          <span className="text-white">{row.name ?? row.strategy}</span>
-          {!market && beats === true && (
-            <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-              &gt; pasar
-            </span>
-          )}
-        </div>
+    <tr style={market ? { background: "var(--s2)", fontWeight: 500 } : undefined}>
+      <td>
+        <span>{row.name ?? row.strategy}</span>
+        {!market && row.beats_market_cagr === true && <span className="beat-badge">&gt; pasar</span>}
       </td>
-      <td className={`py-2 px-3 text-right tabular-nums ${toneFor(m.cagr)}`}>{pct(m.cagr)}</td>
-      <td className="py-2 px-3 text-right tabular-nums text-slate-200">
-        {(m.winrate * 100).toFixed(0)}%
-      </td>
-      <td className="py-2 px-3 text-right tabular-nums text-slate-200">
-        {m.sharpe_ratio.toFixed(2)}
-      </td>
-      <td className="py-2 px-3 text-right tabular-nums text-rose-300/90">
-        {pct(m.max_drawdown)}
-      </td>
-      <td className="py-2 pl-3 text-right tabular-nums text-slate-200">
-        {m.profit_factor.toFixed(2)}
-      </td>
+      <td className={`ta-r mono ${pctClass(m.cagr)}`}>{fmtPctFromFraction(m.cagr, 1)}</td>
+      <td className="ta-r mono">{fmtScore(m.winrate * 100, 0)}%</td>
+      <td className="ta-r mono">{fmtScore(m.sharpe_ratio, 2)}</td>
+      <td className="ta-r mono num-down">{fmtPctFromFraction(m.max_drawdown, 1)}</td>
+      <td className="ta-r mono">{fmtScore(m.profit_factor, 2)}</td>
     </tr>
   );
 }
@@ -60,29 +36,26 @@ export function StrategyBenchmark() {
   const { status, data, error, reload } = useApi(() => getBenchmark(), []);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-white">Strategy Benchmark</h2>
-        {data && <CachedBadge cached={data.cached} />}
-      </div>
-      <p className="mb-4 text-xs text-slate-500">
-        Performa 5 strategi teknikal vs IHSG (buy &amp; hold) — apakah mengalahkan pasar?
-      </p>
-
+    <VCard
+      title="Strategy Benchmark"
+      sub="5 strategi teknikal vs IHSG (buy & hold) — apakah mengalahkan pasar?"
+      subMono={false}
+      cached={!!data?.cached}
+    >
       {status === "loading" && <CardSkeleton lines={6} />}
       {status === "error" && <CardError message={error} onRetry={reload} />}
       {status === "ready" && data && (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="table-wrap">
+            <table className="dtable">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-slate-500">
-                  <th className="py-2 pr-3 text-left font-medium">Strategi</th>
-                  <th className="py-2 px-3 text-right font-medium">CAGR</th>
-                  <th className="py-2 px-3 text-right font-medium">Winrate</th>
-                  <th className="py-2 px-3 text-right font-medium">Sharpe</th>
-                  <th className="py-2 px-3 text-right font-medium">Max DD</th>
-                  <th className="py-2 pl-3 text-right font-medium">PF</th>
+                <tr>
+                  <th>Strategi</th>
+                  <th className="ta-r">CAGR</th>
+                  <th className="ta-r">Winrate</th>
+                  <th className="ta-r">Sharpe</th>
+                  <th className="ta-r">Max DD</th>
+                  <th className="ta-r">PF</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,9 +66,9 @@ export function StrategyBenchmark() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">{data.disclaimer}</p>
+          <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}
-    </section>
+    </VCard>
   );
 }

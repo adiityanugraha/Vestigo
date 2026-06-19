@@ -1,35 +1,32 @@
 "use client";
 
-// Explainable AI + Explain Why Selected (Phase 3 Day 15).
-// Kiri : /api/explain — confidence + bullish factors + risk factors.
-// Kanan: /api/why — strategi yang cocok + alasan spesifik per kriteria yang
-//        benar-benar lolos (termasuk catatan kriteria yang dilewati karena
-//        keterbatasan data).
+// Explainable AI + Explain Why Selected (Phase 3).
+// Kiri : /api/explain — confidence + bullish/risk factors.
+// Kanan: /api/why — strategi yang cocok + alasan per kriteria yang lolos.
 
 import { getExplain, getWhy } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
-import { CachedBadge, CardError, CardSkeleton } from "./CardStatus";
+import { VCard } from "./vestigo/Card";
+import { CardError, CardSkeleton } from "./CardStatus";
 
 function FactorList({
   factors,
-  tone,
-  sign,
+  dir,
   emptyText,
 }: {
   factors: string[];
-  tone: string;
-  sign: string;
+  dir: "up" | "down";
   emptyText: string;
 }) {
   if (factors.length === 0) {
-    return <p className="text-xs text-slate-500">{emptyText}</p>;
+    return <p className="t3 small">{emptyText}</p>;
   }
   return (
-    <ul className="space-y-1.5">
+    <ul className="factor-list">
       {factors.map((factor) => (
-        <li className="flex gap-2 text-xs text-slate-300" key={factor}>
-          <span className={`shrink-0 font-bold ${tone}`}>{sign}</span>
-          <span>{factor}</span>
+        <li key={factor}>
+          <span className={`fi fi-${dir}`}>{dir === "up" ? "↑" : "!"}</span>
+          {factor}
         </li>
       ))}
     </ul>
@@ -41,42 +38,31 @@ function ExplainSide({ symbol }: { symbol: string }) {
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-white">Explainable AI</h3>
-        <div className="flex items-center gap-2">
-          {data && <CachedBadge cached={data.cached} />}
-          {data && (
-            <span className="rounded-md border border-sky-300/30 bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
-              Confidence {data.confidence}%
-            </span>
-          )}
-        </div>
+      <div className="card-head" style={{ marginBottom: 12 }}>
+        <h3 className="section-label" style={{ margin: 0 }}>
+          Explainable AI
+        </h3>
+        {data && <span className="badge badge-info badge-full">Confidence {data.confidence}%</span>}
       </div>
 
       {status === "loading" && <CardSkeleton lines={6} />}
       {status === "error" && <CardError message={error} onRetry={reload} />}
       {status === "ready" && data && (
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300/80">
-              Bullish factors
-            </p>
+            <p className="section-label">Faktor bullish</p>
             <FactorList
               emptyText="Tidak ada sinyal bullish menonjol."
               factors={data.bullish_factors}
-              sign="+"
-              tone="text-emerald-300"
+              dir="up"
             />
           </div>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-300/80">
-              Risk factors
-            </p>
+            <p className="section-label">Faktor risiko</p>
             <FactorList
               emptyText="Tidak ada sinyal risiko menonjol."
               factors={data.risk_factors}
-              sign="−"
-              tone="text-rose-300"
+              dir="down"
             />
           </div>
         </div>
@@ -90,55 +76,41 @@ function WhySide({ symbol }: { symbol: string }) {
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-white">Why Selected</h3>
+      <div className="card-head" style={{ marginBottom: 12 }}>
+        <h3 className="section-label" style={{ margin: 0 }}>
+          Why Selected
+        </h3>
         {data && data.matched.length > 0 && (
-          <span className="rounded-md border border-emerald-300/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
-            {data.matched.length} strategi cocok
-          </span>
+          <span className="badge badge-up badge-full">{data.matched.length} strategi cocok</span>
         )}
       </div>
 
       {status === "loading" && <CardSkeleton lines={6} />}
       {status === "error" && <CardError message={error} onRetry={reload} />}
       {status === "ready" && data && (
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {data.matched_strategies.length === 0 ? (
-            <p className="text-xs text-slate-500">
-              Saham ini tidak lolos strategi screening mana pun hari ini.
-            </p>
+            <p className="t3 small">Saham ini tidak lolos strategi screening mana pun hari ini.</p>
           ) : (
             data.matched_strategies.map((strategy) => (
-              <article
-                className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
-                key={strategy.key}
-              >
-                <p className="mb-2 text-sm font-semibold text-slate-100">
-                  <span className="mr-2 text-emerald-300">V</span>
+              <div className="tile" key={strategy.key}>
+                <p className="section-label" style={{ marginBottom: 8 }}>
+                  <span className="num-up">✓ </span>
                   {strategy.name}
                   <span
-                    className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                      strategy.type === "fundamental"
-                        ? "bg-amber-500/15 text-amber-200"
-                        : "bg-sky-500/15 text-sky-200"
-                    }`}
+                    className={`badge badge-${strategy.type === "fundamental" ? "warn" : "info"}`}
+                    style={{ marginLeft: 8 }}
                   >
                     {strategy.type}
                   </span>
                 </p>
-                <FactorList
-                  emptyText="—"
-                  factors={strategy.reasons}
-                  sign="+"
-                  tone="text-emerald-300"
-                />
+                <FactorList emptyText="—" factors={strategy.reasons} dir="up" />
                 {strategy.skipped.length > 0 && (
-                  <p className="mt-2 text-[11px] italic text-slate-500">
-                    {strategy.skipped.length} kriteria dilewati (data tidak tersedia di
-                    sumber gratis)
+                  <p className="t3 small mt" style={{ fontStyle: "italic" }}>
+                    {strategy.skipped.length} kriteria dilewati (data tidak tersedia di sumber gratis)
                   </p>
                 )}
-              </article>
+              </div>
             ))
           )}
         </div>
@@ -149,17 +121,15 @@ function WhySide({ symbol }: { symbol: string }) {
 
 export function ExplainPanel({ symbol }: { symbol: string }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-white">Explain · {symbol}</h2>
-      </div>
-      <p className="mb-4 text-xs text-slate-500">
-        Kenapa saham ini terpilih — penjelasan dari kriteria yang benar-benar lolos
-      </p>
-      <div className="grid gap-6 lg:grid-cols-2">
+    <VCard
+      title={`Explain · ${symbol}`}
+      sub="Kenapa saham ini terpilih — dari kriteria yang benar-benar lolos"
+      subMono={false}
+    >
+      <div className="xai-grid">
         <ExplainSide symbol={symbol} />
         <WhySide symbol={symbol} />
       </div>
-    </section>
+    </VCard>
   );
 }

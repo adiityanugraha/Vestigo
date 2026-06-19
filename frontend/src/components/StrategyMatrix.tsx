@@ -1,16 +1,14 @@
 "use client";
 
-// Strategy Comparison Dashboard (Phase 3 Day 14).
-// Matrix saham x 9 strategi dari GET /api/strategy-matrix. Sel tiga-keadaan:
-//   V (lolos) / x (dinilai tapi gagal) / – (tidak dinilai, mis. tanpa data
-//   fundamental) — meneruskan distingsi evaluated-vs-failed dari backend.
+// Strategy Comparison Matrix (Phase 3). Saham x 9 strategi, sel tiga-keadaan:
+//   ✓ lolos / × dinilai-gagal / – tak dinilai. GET /api/strategy-matrix.
 
 import { useState } from "react";
 import { getStrategyMatrix, type StrategyMeta } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
-import { CachedBadge, CardError, CardSkeleton } from "./CardStatus";
+import { VCard } from "./vestigo/Card";
+import { CardError, CardSkeleton } from "./CardStatus";
 
-// Singkatan kolom agar matrix muat; nama lengkap tampil sebagai tooltip.
 const SHORT_LABELS: Record<string, string> = {
   bsjp: "BSJP",
   bpjs: "BPJS",
@@ -28,25 +26,10 @@ function shortLabel(strategy: StrategyMeta): string {
 }
 
 function Cell({ value }: { value: boolean | null }) {
-  if (value === true) {
-    return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/20 text-xs font-bold text-emerald-300">
-        V
-      </span>
-    );
-  }
-  if (value === false) {
-    return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.04] text-xs text-slate-600">
-        x
-      </span>
-    );
-  }
+  if (value === true) return <span className="mx-cell mx-pass">✓</span>;
+  if (value === false) return <span className="mx-cell mx-fail">×</span>;
   return (
-    <span
-      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-slate-700"
-      title="Tidak dinilai (data tidak cukup)"
-    >
+    <span className="mx-cell mx-na" title="Tidak dinilai (data tidak cukup)">
       –
     </span>
   );
@@ -60,92 +43,77 @@ export function StrategyMatrix() {
   );
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-white">Strategy Comparison Matrix</h2>
-        <div className="flex items-center gap-2">
-          {data && <CachedBadge cached={data.cached} />}
-          <span className="text-xs font-medium text-slate-400">{data?.date ?? ""}</span>
-        </div>
-      </div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">
-          Saham lolos di strategi mana saja (V lolos · x gagal · – tak dinilai)
-        </p>
-        <label className="flex items-center gap-2 text-xs text-slate-400">
-          Min. lolos
+    <VCard
+      title="Strategy Matrix"
+      sub="Pass / fail per ticker · 9 strategi (✓ lolos · × gagal · – tak dinilai)"
+      subMono={false}
+      cached={!!data?.cached}
+      right={
+        <label className="select-wrap">
+          <span className="chip-label">Min. lolos</span>
           <select
-            className="rounded-md border border-white/10 bg-[#0b1020] px-2 py-1 text-xs text-slate-200"
-            onChange={(event) => setMinPassed(Number(event.target.value))}
+            className="select"
             value={minPassed}
+            onChange={(event) => setMinPassed(Number(event.target.value))}
           >
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>
-                {n} strategi
+                {n}+
               </option>
             ))}
           </select>
         </label>
-      </div>
-
+      }
+    >
       {status === "loading" && <CardSkeleton lines={7} />}
       {status === "error" && <CardError message={error} onRetry={reload} />}
       {status === "ready" && data && (
-        <div className="overflow-x-auto">
+        <>
           {data.matrix.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">
-              Tidak ada saham yang lolos ≥ {minPassed} strategi.
-            </p>
+            <p className="empty-state">Tidak ada saham yang lolos ≥ {minPassed} strategi.</p>
           ) : (
-            <table className="w-full min-w-[640px] border-separate border-spacing-y-1 text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-2 py-1">Ticker</th>
-                  <th className="px-2 py-1 text-center">#</th>
-                  {data.strategies.map((strategy) => (
-                    <th
-                      className={`px-1 py-1 text-center ${
-                        strategy.type === "fundamental" ? "text-amber-300/80" : "text-sky-300/80"
-                      }`}
-                      key={strategy.key}
-                      title={strategy.name}
-                    >
-                      {shortLabel(strategy)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.matrix.map((row) => (
-                  <tr className="rounded-lg bg-white/[0.02]" key={row.ticker}>
-                    <td className="px-2 py-1.5">
-                      <span className="font-semibold text-slate-100">{row.ticker}</span>
-                      {row.name && (
-                        <span className="ml-2 hidden text-xs text-slate-500 xl:inline">
-                          {row.name}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-2 py-1.5 text-center font-bold tabular-nums text-emerald-300">
-                      {row.passed_count}
-                    </td>
+            <div className="matrix-wrap">
+              <table className="dtable matrix">
+                <thead>
+                  <tr>
+                    <th className="mx-sticky">Ticker</th>
+                    <th className="ta-c">Lolos</th>
                     {data.strategies.map((strategy) => (
-                      <td className="px-1 py-1.5 text-center" key={strategy.key}>
-                        <Cell value={row.results[strategy.key] ?? null} />
-                      </td>
+                      <th key={strategy.key} className="ta-c" title={strategy.name}>
+                        <span className={strategy.type === "fundamental" ? "chip-warn" : "chip-info"}>
+                          {shortLabel(strategy)}
+                        </span>
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.matrix.map((row) => (
+                    <tr key={row.ticker}>
+                      <td className="mx-sticky">
+                        <span className="tk-pill">{row.ticker}</span>
+                      </td>
+                      <td className="ta-c mono num-up">
+                        <strong>{row.passed_count}</strong>
+                      </td>
+                      {data.strategies.map((strategy) => (
+                        <td key={strategy.key} className="ta-c">
+                          <Cell value={row.results[strategy.key] ?? null} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-          <p className="mt-3 text-[11px] text-slate-500">
-            <span className="text-sky-300/80">biru</span> = teknikal ·{" "}
-            <span className="text-amber-300/80">kuning</span> = fundamental ·{" "}
-            {data.universe_evaluated} saham dievaluasi
+          <p className="card-sub mt">
+            <span className="chip-info">biru</span> = teknikal ·{" "}
+            <span className="chip-warn">kuning</span> = fundamental · {data.universe_evaluated} saham
+            dievaluasi. Geser horizontal untuk strategi lainnya.
           </p>
-        </div>
+        </>
       )}
-    </section>
+    </VCard>
   );
 }
