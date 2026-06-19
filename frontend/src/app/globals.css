@@ -1425,6 +1425,57 @@ select {
   border-radius: 6px;
 }
 
+/* ============================================================
+   Mobile pass — tighten paddings & scale type on small screens.
+   ============================================================ */
+@media (max-width: 640px) {
+  body {
+    font-size: 13px;
+  }
+  .global-banner {
+    padding: 9px 16px;
+    font-size: 11px;
+  }
+  .topbar {
+    padding: 16px 16px 14px;
+    gap: 14px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+  .topbar-ctrls {
+    width: 100%;
+  }
+  .content {
+    padding: 20px 16px;
+    gap: 20px;
+  }
+  .app-foot {
+    padding: 16px 16px 24px;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card {
+    padding: 16px;
+  }
+  .onboard {
+    margin: 0 16px;
+  }
+  /* Stack two-up tile rows so numbers stay readable on narrow phones. */
+  .tile-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .seg-btn {
+    padding: 0 16px;
+  }
+  .tile-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   html {
