@@ -11,6 +11,12 @@ Next.js dan backend FastAPI.
 
 > ⚠️ Proyek edukasi. **Bukan nasihat finansial.**
 
+**🔗 Live demo:** [vestigo-steel.vercel.app](https://vestigo-steel.vercel.app) · **API docs:** [/docs](https://vestigo-production.up.railway.app/docs)
+
+> Di-host pada tier gratis (Vercel + Railway). Pemuatan pertama endpoint berat
+> (Screener/Ranking) bisa ~15–20 detik karena _cold start_ inferensi ONNX, lalu
+> hasilnya di-cache (Redis).
+
 ---
 
 ## Gambaran Besar
@@ -67,7 +73,7 @@ Vestigo dibangun dalam lima fase (lalu di-_rebrand_ & _redesign_ — lihat
                                                                      │
                                        ┌─────────────────────────────┼───────────────┐
                                        ▼                             ▼                ▼
-                                 PostgreSQL (Neon)          Redis (Upstash)     ONNX models
+                                 PostgreSQL (Railway)       Redis (Upstash)     ONNX models
                                  market_data, stocks,       cache: harga,       model.onnx +
                                  fundamentals(+derived),    indikator, ranking, forecast_{1,5,20}d
                                  strategy_results,          matrix, report,     (RandomForest CPU)
@@ -114,7 +120,7 @@ pocket-screener/
 
 - **Vercel** harus diset **Root Directory = `frontend`**.
 - **Backend** men-deploy folder `backend/` ke Railway.
-- Database & cache memakai layanan cloud: **Neon** (PostgreSQL) & **Upstash** (Redis).
+- Database & cache memakai layanan cloud: **Railway Postgres** (produksi) & **Upstash** (Redis). Dev bisa pakai Postgres lokal/Neon.
 
 ---
 
@@ -288,13 +294,59 @@ Buka http://localhost:3000. Frontend membaca `NEXT_PUBLIC_API_BASE_URL`
 
 ---
 
+## Deployment (Produksi)
+
+Vestigo berjalan di **Vercel** (frontend) + **Railway** (backend + Postgres) +
+**Upstash** (Redis) + **Google Gemini** (LLM). Backend di-deploy via `backend/Dockerfile`
+(sudah menangani `$PORT` Railway); frontend adalah app Next.js standar.
+
+**1. Backend → Railway**
+- Tambah plugin **Postgres** (otomatis menyediakan `DATABASE_URL`).
+- Buat service dari repo → **Root Directory = `backend`** (auto-deteksi Dockerfile).
+- **Settings → Networking → Generate Domain** (URL backend publik).
+- **Variables:**
+
+  | Variable | Nilai |
+  | -------- | ----- |
+  | `DATABASE_URL` | `${{ Postgres.DATABASE_URL }}` |
+  | `REDIS_URL` | `rediss://default:<PASSWORD>@<host>.upstash.io:6379` |
+  | `GEMINI_API_KEY` | API key Google AI Studio |
+  | `CORS_ORIGINS` | URL Vercel **tanpa** trailing slash, mis. `https://<app>.vercel.app` |
+  | `ENVIRONMENT` | `production` |
+  | `SCHEDULER_ENABLED` | `false` saat isi data awal, lalu `true` (job malam mengisi & cache) |
+
+**2. Isi data ke Postgres Railway** (sekali, dari lokal — arahkan `DATABASE_URL` ke
+`DATABASE_PUBLIC_URL` Railway, host `…proxy.rlwy.net`):
+
+```powershell
+$env:DATABASE_URL  = "<DATABASE_PUBLIC_URL Railway>"
+$env:GEMINI_API_KEY = "<key>"
+python -m app.db.init_db                      # buat tabel + seed 81 saham
+python -m app.core.market_data --range 10y    # ingest OHLCV + indikator
+python -m app.data.fundamentals_fetch ; python -m app.data.fundamentals_derived
+python -m app.quant.reconstruct ; python -m app.quant.forward_returns
+python -m app.rag.knowledge_base              # seed RAG (vector store lokal)
+```
+
+**3. Frontend → Vercel**
+- Import repo → **Root Directory = `frontend`** (preset **Next.js**, bukan "Services").
+- Env **`NEXT_PUBLIC_API_BASE_URL`** = URL backend Railway.
+- Deploy → catat URL, lalu set `CORS_ORIGINS` backend ke URL tsb. → redeploy backend.
+
+> **Catatan:** (a) `NEXT_PUBLIC_API_BASE_URL` di-_bake_ saat build — pastikan terisi
+> sebelum deploy. (b) Hindari `.npmrc` berisi `script-shell=powershell` di repo —
+> menggagalkan `npm install` di Linux Vercel. (c) Tier gratis: endpoint berat
+> (Screener/Ranking) lambat di pemuatan pertama (cold start ONNX) lalu di-cache.
+
+---
+
 ## Tech Stack
 
 | Area | Teknologi |
 | ---- | --------- |
 | Frontend | Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Lightweight-charts · Recharts · design tokens "Vestigo" (mode Lite/Pro) · font Inter + JetBrains Mono |
 | Backend | FastAPI · SQLAlchemy 2.0 · APScheduler · httpx |
-| Database | PostgreSQL (Neon) |
+| Database | PostgreSQL — Railway (produksi) · lokal/Neon (dev) |
 | Cache | Redis (Upstash) |
 | ML | scikit-learn + skl2onnx (training offline) → ONNX → onnxruntime (inferensi server-side) |
 | Forecast | 3 model RandomForest terkalibrasi (1D/5D/20D), binary classification P(return > 0) |
