@@ -6,20 +6,9 @@
 import { useState } from "react";
 import { getStrategyMatrix, type StrategyMeta } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
+import { STRATEGY_SHORT as SHORT_LABELS } from "@/lib/strategies";
 import { VCard } from "./vestigo/Card";
 import { CardError, CardSkeleton } from "./CardStatus";
-
-const SHORT_LABELS: Record<string, string> = {
-  bsjp: "BSJP",
-  bpjs: "BPJS",
-  breakout: "BRK",
-  trend_following: "TRND",
-  potential_reversal: "RVSL",
-  high_growth: "GRWT",
-  cash_rich: "CASH",
-  turnaround: "TURN",
-  timeless: "TMLS",
-};
 
 function shortLabel(strategy: StrategyMeta): string {
   return SHORT_LABELS[strategy.key] ?? strategy.key.slice(0, 4).toUpperCase();

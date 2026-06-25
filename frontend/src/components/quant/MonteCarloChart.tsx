@@ -17,16 +17,9 @@ import {
 import { getMonteCarlo } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { fmtPctFromFraction, fmtScore } from "@/lib/format";
+import { TECHNICAL_STRATEGIES as STRATEGIES } from "@/lib/strategies";
 import { VCard } from "../vestigo/Card";
 import { CardError, CardSkeleton } from "../CardStatus";
-
-const STRATEGIES = [
-  { key: "bsjp", label: "BSJP" },
-  { key: "bpjs", label: "BPJS" },
-  { key: "breakout", label: "Breakout" },
-  { key: "trend_following", label: "Trend Following" },
-  { key: "potential_reversal", label: "Potential Reversal" },
-];
 
 const TOOLTIP_STYLE = {
   background: "var(--s1)",

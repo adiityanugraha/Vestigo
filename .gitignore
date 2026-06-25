@@ -45,6 +45,12 @@ htmlcov/
 # Vektor adalah artefak biner yang dihasilkan, bukan sumber — jangan di-commit.
 backend/app/rag/data/
 
+# --- Local-only npm config ---
+# frontend/.npmrc memakai script-shell=powershell agar `npm run ...` jalan di
+# Windows ketika path project mengandung '&'/spasi. JANGAN commit — config ini
+# menggagalkan `npm install` di Linux/Vercel (spawn powershell ENOENT).
+frontend/.npmrc
+
 # --- Misc ---
 .DS_Store
 *.log

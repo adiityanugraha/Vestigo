@@ -5,10 +5,9 @@
 
 import { useState } from "react";
 import { getCompareStrategy, type CompareStrategyResponse } from "@/lib/api";
+import { TECHNICAL_STRATEGIES } from "@/lib/strategies";
 import { VCard } from "../vestigo/Card";
 import { CardError } from "../CardStatus";
-
-const TECHNICAL = ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"];
 
 const METRIC_LABELS: Record<string, string> = {
   cagr: "CAGR",
@@ -57,17 +56,17 @@ export function StrategyComparator() {
         }}
       >
         <select value={a} onChange={(e) => setA(e.target.value)} className="select">
-          {TECHNICAL.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {TECHNICAL_STRATEGIES.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.label}
             </option>
           ))}
         </select>
         <span className="t3">vs</span>
         <select value={b} onChange={(e) => setB(e.target.value)} className="select">
-          {TECHNICAL.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {TECHNICAL_STRATEGIES.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.label}
             </option>
           ))}
         </select>

@@ -6,10 +6,11 @@
 import { getRiskProfile, type RiskProfileResponse } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { fmtPctFromFraction, fmtScore } from "@/lib/format";
+import { TECHNICAL_STRATEGIES } from "@/lib/strategies";
 import { VCard } from "../vestigo/Card";
 import { CardError, CardSkeleton } from "../CardStatus";
 
-const STRATEGIES = ["bsjp", "bpjs", "breakout", "trend_following", "potential_reversal"];
+const STRATEGIES = TECHNICAL_STRATEGIES.map((s) => s.key);
 
 function levelTone(level: string): "up" | "warn" | "down" | "neutral" {
   if (level === "LOW") return "up";

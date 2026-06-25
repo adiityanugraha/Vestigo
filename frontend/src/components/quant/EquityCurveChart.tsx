@@ -16,16 +16,9 @@ import {
 import { getEquityCurve } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { fmtPctFromFraction, fmtValue } from "@/lib/format";
+import { TECHNICAL_STRATEGIES as STRATEGIES } from "@/lib/strategies";
 import { VCard } from "../vestigo/Card";
 import { CardError, CardSkeleton } from "../CardStatus";
-
-const STRATEGIES = [
-  { key: "bsjp", label: "BSJP" },
-  { key: "bpjs", label: "BPJS" },
-  { key: "breakout", label: "Breakout" },
-  { key: "trend_following", label: "Trend Following" },
-  { key: "potential_reversal", label: "Potential Reversal" },
-];
 
 const INITIAL_CAPITAL = 100_000_000;
 const TOOLTIP_STYLE = {

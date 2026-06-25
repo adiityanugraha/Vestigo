@@ -7,16 +7,9 @@ import { useState } from "react";
 import { getReplay, type ReplayCandidate } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { fmtInt, fmtPctFromFraction } from "@/lib/format";
+import { STRATEGY_LABEL as STRATEGY_LABELS } from "@/lib/strategies";
 import { VCard } from "../vestigo/Card";
 import { CardError, CardSkeleton } from "../CardStatus";
-
-const STRATEGY_LABELS: Record<string, string> = {
-  bsjp: "BSJP",
-  bpjs: "BPJS",
-  breakout: "Breakout",
-  trend_following: "Trend Following",
-  potential_reversal: "Potential Reversal",
-};
 
 const DEFAULT_DATE = "2024-01-15";
 
