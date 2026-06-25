@@ -28,11 +28,16 @@ from app.cache import redis_client
 from app.core import market_breadth as mb
 from app.core.instruments import is_index
 from app.db.models import MarketBreadth, MarketData, Stock
+from app.db.queries import load_recent_bars_by_ticker
 from app.db.session import get_db
 
 router = APIRouter(prefix="/api/market-breadth", tags=["market-breadth"])
 
 CACHE_KEY = "market-breadth:{date}:top={top}"
+
+# Breadth hanya butuh bar `target` + bar tepat sebelumnya. 20 hari kalender
+# pasti memuat ≥2 bar bursa (cukup walau ada libur), tanpa memuat seluruh tabel.
+BREADTH_LOOKBACK_DAYS = 20
 
 
 # --------------------------------------------------------------------------- #
@@ -83,10 +88,9 @@ def _resolve_date(db: Session, date_param: str | None) -> date_cls:
 
 def _build_changes(db: Session, target: date_cls) -> list[mb.StockChange]:
     """Perubahan harian tiap saham pada `target` = close vs bar tepat sebelumnya."""
-    rows = db.scalars(select(MarketData).order_by(MarketData.ticker, MarketData.date))
-    by_ticker: dict[str, list[MarketData]] = {}
-    for row in rows:
-        by_ticker.setdefault(row.ticker, []).append(row)
+    by_ticker = load_recent_bars_by_ticker(
+        db, lookback_days=BREADTH_LOOKBACK_DAYS, as_of=target
+    )
 
     stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
 

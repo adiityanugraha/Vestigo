@@ -25,6 +25,7 @@ from app.core import composite_score as cs
 from app.core import indicators
 from app.core.instruments import is_index
 from app.db.models import MarketData, Stock
+from app.db.queries import load_recent_bars_by_ticker
 from app.db.session import get_db
 from app.ml import inference
 from app.ml.features import build_feature_vector
@@ -35,6 +36,11 @@ CACHE_KEY = "ranking:limit={limit}:ml={ml}"
 
 # Minimal bar untuk menghitung return 5-hari + indikator dasar.
 MIN_BARS = 6
+
+# Composite hanya butuh bar-bar terakhir (indikator pre-computed + return 5-hari +
+# baseline volume 20-hari + fitur ML). 90 hari kalender (~62 bar bursa) jauh lebih
+# dari cukup, tapi mencegah memuat seluruh histori 10 tahun ke memori.
+RANKING_LOOKBACK_DAYS = 90
 
 
 # --------------------------------------------------------------------------- #
@@ -72,11 +78,7 @@ class RankingResponse(BaseModel):
 # Pipeline
 # --------------------------------------------------------------------------- #
 def _load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
-    rows = db.scalars(select(MarketData).order_by(MarketData.ticker, MarketData.date))
-    grouped: dict[str, list[MarketData]] = {}
-    for row in rows:
-        grouped.setdefault(row.ticker, []).append(row)
-    return grouped
+    return load_recent_bars_by_ticker(db, lookback_days=RANKING_LOOKBACK_DAYS)
 
 
 def _predict_up(bars: list[MarketData]) -> float | None:

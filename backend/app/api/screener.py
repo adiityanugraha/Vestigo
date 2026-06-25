@@ -28,9 +28,14 @@ from app.core import strategy_screener
 from app.core.instruments import is_index
 from app.core.strategies import registry
 from app.db.models import MarketData, ScreeningHistory, Stock
+from app.db.queries import load_recent_bars_by_ticker
 from app.db.session import get_db
 from app.ml import inference
 from app.ml.features import build_feature_vector
+
+# BSJP/BPJS + ML hanya memakai bar-bar terakhir (indikator pre-computed + baseline
+# volume 20-hari + fitur ML). 120 hari kalender (~83 bar bursa) cukup longgar.
+SCREENER_LOOKBACK_DAYS = 120
 
 router = APIRouter(prefix="/api/screener", tags=["screener"])
 
@@ -147,14 +152,8 @@ class AllStrategiesResponse(BaseModel):
 # Pipeline
 # --------------------------------------------------------------------------- #
 def _load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
-    """Semua bar market_data dikelompokkan per ticker, urut kronologis."""
-    rows = db.scalars(
-        select(MarketData).order_by(MarketData.ticker, MarketData.date)
-    )
-    grouped: dict[str, list[MarketData]] = {}
-    for row in rows:
-        grouped.setdefault(row.ticker, []).append(row)
-    return grouped
+    """Bar market_data terakhir (jendela ~120 hari) dikelompokkan per ticker."""
+    return load_recent_bars_by_ticker(db, lookback_days=SCREENER_LOOKBACK_DAYS)
 
 
 def _candidate_to_dict(
