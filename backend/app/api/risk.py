@@ -74,22 +74,30 @@ def _market_returns_by_date(db: Session) -> dict[date_cls, float]:
     """Proxy index: rata-rata return harian seluruh saham, dikunci per tanggal.
 
     Dipakai sebagai pembanding untuk menghitung Beta (IHSG tak tersimpan).
+
+    Memuat HANYA kolom (ticker, date, close) sebagai tuple ringan — bukan objek
+    ORM penuh — agar tidak meledakkan memori (proxy butuh seluruh histori untuk
+    menjaga nilai Beta tetap sama; jadi yang dihemat adalah berat per-baris).
     """
-    rows = db.scalars(select(MarketData).order_by(MarketData.ticker, MarketData.date))
-    by_ticker: dict[str, list[MarketData]] = {}
-    for row in rows:
-        by_ticker.setdefault(row.ticker, []).append(row)
+    rows = db.execute(
+        select(MarketData.ticker, MarketData.date, MarketData.close).order_by(
+            MarketData.ticker, MarketData.date
+        )
+    )
+    by_ticker: dict[str, list[tuple[date_cls, float | None]]] = {}
+    for ticker, day, close in rows:
+        by_ticker.setdefault(ticker, []).append((day, close))
 
     sums: dict[date_cls, float] = {}
     counts: dict[date_cls, int] = {}
-    for ticker, bars in by_ticker.items():
+    for ticker, series in by_ticker.items():
         if is_index(ticker):  # jangan masukkan indeks ke proxy pasar
             continue
-        for i in range(1, len(bars)):
-            prev_close = bars[i - 1].close
-            cur_close = bars[i].close
+        for i in range(1, len(series)):
+            prev_close = series[i - 1][1]
+            cur_close = series[i][1]
             if prev_close and cur_close:
-                day = bars[i].date
+                day = series[i][0]
                 sums[day] = sums.get(day, 0.0) + (cur_close / prev_close - 1)
                 counts[day] = counts.get(day, 0) + 1
     return {day: sums[day] / counts[day] for day in sums}

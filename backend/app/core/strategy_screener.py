@@ -19,15 +19,17 @@ from app.core.instruments import is_index
 from app.core.strategies import registry
 from app.core.strategies.base import StockData
 from app.db.models import Fundamental, MarketData, Stock, StrategyResultRow
+from app.db.queries import load_recent_bars_by_ticker
+
+# Strategi terpanjang = Trend Following (MA200 -> butuh >=200 bar). 420 hari
+# kalender (~290 bar bursa) memenuhinya dengan margin; price_ma(200) tetap memakai
+# 200 bar terakhir sehingga hasil IDENTIK, tanpa memuat seluruh histori 10 tahun.
+STRATEGY_LOOKBACK_DAYS = 420
 
 
 def load_bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
-    """Semua bar market_data dikelompokkan per ticker, urut kronologis."""
-    rows = db.scalars(select(MarketData).order_by(MarketData.ticker, MarketData.date))
-    grouped: dict[str, list[MarketData]] = {}
-    for row in rows:
-        grouped.setdefault(row.ticker, []).append(row)
-    return grouped
+    """Bar market_data terakhir (jendela ~420 hari) dikelompokkan per ticker."""
+    return load_recent_bars_by_ticker(db, lookback_days=STRATEGY_LOOKBACK_DAYS)
 
 
 def load_fundamentals_by_ticker(db: Session) -> dict[str, list[Fundamental]]:

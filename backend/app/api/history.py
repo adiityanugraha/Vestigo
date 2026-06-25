@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core import performance
 from app.db.models import Backtesting, MarketData, ScreeningHistory, Stock
+from app.db.queries import load_recent_bars_by_ticker
 from app.db.session import get_db
 
 router = APIRouter(prefix="/api/history", tags=["history"])
@@ -88,12 +89,21 @@ class PerformanceResponse(BaseModel):
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
-def _bars_by_ticker(db: Session) -> dict[str, list[MarketData]]:
-    rows = db.scalars(select(MarketData).order_by(MarketData.ticker, MarketData.date))
-    grouped: dict[str, list[MarketData]] = {}
-    for row in rows:
-        grouped.setdefault(row.ticker, []).append(row)
-    return grouped
+def _bars_by_ticker(
+    db: Session, history_rows: list[ScreeningHistory]
+) -> dict[str, list[MarketData]]:
+    """Hanya muat bar yang menjangkau rentang tanggal entri riwayat + horizon
+    (dari tanggal pick tertua sampai tanggal terbaru) — bukan seluruh histori.
+    Hasil tracking IDENTIK karena semua bar yang dibutuhkan tetap termuat.
+    """
+    if not history_rows:
+        return {}
+    latest = db.scalar(select(func.max(MarketData.date)))
+    if latest is None:
+        return {}
+    oldest = min(row.date for row in history_rows)
+    lookback = (latest - oldest).days + 10  # +buffer untuk bar forward
+    return load_recent_bars_by_ticker(db, lookback_days=lookback)
 
 
 def _date_index(bars: list[MarketData]) -> dict[date_cls, int]:
@@ -191,7 +201,7 @@ def get_history(
     stmt = stmt.order_by(ScreeningHistory.date.desc(), ScreeningHistory.score.desc()).limit(limit)
 
     history_rows = list(db.scalars(stmt))
-    bars_by_ticker = _bars_by_ticker(db)
+    bars_by_ticker = _bars_by_ticker(db, history_rows)
     stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
 
     trades = _track(history_rows, bars_by_ticker, stock_map, horizon)
@@ -228,7 +238,7 @@ def get_history_performance(
     db: Session = Depends(get_db),
 ) -> dict:
     history_rows = list(db.scalars(select(ScreeningHistory)))
-    bars_by_ticker = _bars_by_ticker(db)
+    bars_by_ticker = _bars_by_ticker(db, history_rows)
     stock_map = {stock.ticker: stock for stock in db.scalars(select(Stock))}
 
     trades = _track(history_rows, bars_by_ticker, stock_map, horizon)
