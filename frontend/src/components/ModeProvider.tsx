@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { getMeta } from "@/lib/api";
 
 export type Mode = "LITE" | "PRO";
 
@@ -17,6 +18,8 @@ type ModeContextValue = {
   setMode: (mode: Mode) => void;
   /** True once the client has read the persisted preference (avoids SSR flash logic). */
   ready: boolean;
+  /** Tanggal data terbaru dari backend (untuk label "Data per ..."). */
+  dataDate: string | null;
 };
 
 const STORAGE_KEY = "vestigo.mode";
@@ -31,12 +34,28 @@ const ModeContext = createContext<ModeContextValue | null>(null);
 export function ModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<Mode>("LITE");
   const [ready, setReady] = useState(false);
+  const [dataDate, setDataDate] = useState<string | null>(null);
 
   // Read persisted preference on the client only (server always renders LITE).
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved === "PRO" || saved === "LITE") setModeState(saved);
     setReady(true);
+  }, []);
+
+  // Tanggal data asli (sekali, fail-safe — kalau gagal, label sembunyi).
+  useEffect(() => {
+    let active = true;
+    getMeta()
+      .then((m) => {
+        if (active) setDataDate(m.data_date);
+      })
+      .catch(() => {
+        /* abaikan — footer cukup tanpa tanggal */
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const setMode = useCallback((next: Mode) => {
@@ -49,7 +68,9 @@ export function ModeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ModeContext.Provider value={{ mode, pro: mode === "PRO", setMode, ready }}>
+    <ModeContext.Provider
+      value={{ mode, pro: mode === "PRO", setMode, ready, dataDate }}
+    >
       {children}
     </ModeContext.Provider>
   );

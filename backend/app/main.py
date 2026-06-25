@@ -10,10 +10,13 @@ Docs (Swagger): http://localhost:8000/docs
 from __future__ import annotations
 
 import logging
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import (
     ai_analysis,
@@ -32,6 +35,7 @@ from app.api import (
     market_breadth,
     market_data,
     market_summary,
+    meta,
     monte_carlo,
     natural_query,
     performance,
@@ -87,8 +91,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --------------------------------------------------------------------------- #
+# Rate limiting sederhana (in-memory, per-IP, fixed window) — tanpa dependensi.
+# Melindungi API publik dari spam: endpoint LLM (Gemini, berbiaya) dibatasi lebih
+# ketat daripada endpoint biasa. Cukup untuk 1 instance Railway; untuk multi-
+# instance pakai store bersama (Redis).
+# --------------------------------------------------------------------------- #
+_RATE_WINDOW_SEC = 60
+_RATE_LIMIT_DEFAULT = 200  # request/menit/IP untuk endpoint umum
+_RATE_LIMIT_LLM = 20  # lebih ketat untuk endpoint yang memanggil Gemini
+_LLM_PATH_PREFIXES = ("/api/chat", "/api/natural-query")
+_rate_hits: dict[tuple[str, str], list[float]] = defaultdict(list)
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    path = request.url.path
+    # Lewati preflight CORS & health check.
+    if request.method == "OPTIONS" or path == "/api/health":
+        return await call_next(request)
+
+    is_llm = path.startswith(_LLM_PATH_PREFIXES)
+    limit = _RATE_LIMIT_LLM if is_llm else _RATE_LIMIT_DEFAULT
+    bucket = "llm" if is_llm else "default"
+    client_ip = request.client.host if request.client else "unknown"
+    key = (client_ip, bucket)
+
+    now = time.monotonic()
+    window_start = now - _RATE_WINDOW_SEC
+    hits = _rate_hits[key]
+    hits[:] = [t for t in hits if t >= window_start]  # buang yang kedaluwarsa
+
+    if len(hits) >= limit:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Terlalu banyak permintaan. Coba lagi sebentar."},
+        )
+
+    hits.append(now)
+    if not hits:
+        _rate_hits.pop(key, None)  # jaga dict tetap ramping
+    return await call_next(request)
+
+
 # Routers
 app.include_router(health.router)
+app.include_router(meta.router)
 app.include_router(performance.router)
 app.include_router(equity_curve.router)
 app.include_router(benchmark.router)

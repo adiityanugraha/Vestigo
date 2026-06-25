@@ -1,7 +1,8 @@
 // Vestigo — shared status components for API-backed cards.
 // Skeleton = subtle shimmer (not a spinner); error = clear, no apology.
+"use client";
 
-const CACHE_DATE = "2026-06-15";
+import { useMode } from "./ModeProvider";
 
 export function CardSkeleton({ lines = 4 }: { lines?: number }) {
   return (
@@ -41,16 +42,11 @@ export function CardError({
  * "cached" indicator — a small dot in the card's top-right with a hover tooltip,
  * replacing the noisy pill (design.txt §4.3). Place inside a `.card`.
  */
-export function CachedDot({ cached, date = CACHE_DATE }: { cached: boolean; date?: string }) {
+export function CachedDot({ cached }: { cached: boolean }) {
+  const { dataDate } = useMode();
   if (!cached) return null;
-  return (
-    <span
-      className="cached-dot"
-      tabIndex={0}
-      data-tip={`Data per ${date} · cached`}
-      aria-label={`Data per ${date}, cached`}
-    />
-  );
+  const tip = dataDate ? `Data per ${dataDate} · cached` : "cached";
+  return <span className="cached-dot" tabIndex={0} data-tip={tip} aria-label={tip} />;
 }
 
 /** Back-compat alias: older imports used <CachedBadge cached=… />. */

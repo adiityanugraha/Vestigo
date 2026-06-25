@@ -899,3 +899,10 @@ export async function streamChat(
   }
   return full;
 }
+
+// --- Meta (Phase: tanggal data asli untuk header/footer) ---
+export type MetaResponse = { data_date: string | null; universe: number };
+
+export function getMeta(): Promise<MetaResponse> {
+  return apiGet("/api/meta");
+}

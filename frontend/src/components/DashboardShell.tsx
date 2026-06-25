@@ -36,7 +36,6 @@ const PRO_ONLY_PATHS = NAV_ITEMS.filter((i) => !i.lite).map((i) => i.href);
 
 const DISCLAIMER_TEXT =
   "Alat bantu analisis & edukasi, BUKAN nasihat keuangan. Keputusan investasi tanggung jawab Anda.";
-const CACHE_DATE = "2026-06-15";
 
 function NavIcon({ d }: { d: string }) {
   return (
@@ -92,7 +91,7 @@ export function DashboardShell({
   eyebrow = "IDX Stock Screener",
   title = "Dashboard",
 }: DashboardShellProps) {
-  const { mode, setMode, ready } = useMode();
+  const { mode, setMode, ready, dataDate } = useMode();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -209,7 +208,7 @@ export function DashboardShell({
         <footer className="app-foot">
           <span>Vestigo · IDX stock screener</span>
           <span className="t3">
-            Data per {CACHE_DATE} · cached · alat edukasi, bukan nasihat keuangan
+            {dataDate ? `Data per ${dataDate} · ` : ""}alat edukasi, bukan nasihat keuangan
           </span>
         </footer>
       </main>
