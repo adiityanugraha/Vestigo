@@ -48,14 +48,14 @@ export function DailyReport() {
       {state.status === "ready" && (
         <>
           {state.data.date && <p className="card-sub mono">{state.data.date}</p>}
-          {state.data.overview && <p className="narrator" style={{ fontSize: 14 }}>{state.data.overview}</p>}
+          {state.data.overview && <p className="narrator narrator-sm">{state.data.overview}</p>}
 
           <div className="grid-2">
             <div>
               <p className="section-label">Top opportunities</p>
               <ul className="report-list">
                 {state.data.top_opportunities.map((o) => (
-                  <li key={o.ticker} style={{ justifyContent: "space-between" }}>
+                  <li key={o.ticker} className="between">
                     <span className="mini-sym">{o.ticker}</span>
                     <span className="mono badge badge-info">{fmtScore(o.overall_score)}</span>
                   </li>
@@ -69,7 +69,7 @@ export function DailyReport() {
               {state.data.high_confidence.length > 0 ? (
                 <ul className="report-list">
                   {state.data.high_confidence.map((h) => (
-                    <li key={h.ticker} style={{ justifyContent: "space-between" }}>
+                    <li key={h.ticker} className="between">
                       <span className="mini-sym">{h.ticker}</span>
                       <span className="mono num-up">
                         {h.prob_5d != null ? `${fmtScore(h.prob_5d * 100, 0)}%` : "—"}

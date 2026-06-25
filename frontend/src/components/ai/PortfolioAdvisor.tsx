@@ -6,14 +6,10 @@
 import { useState } from "react";
 import { postPortfolioAdvisor, type PortfolioAdvisorResponse } from "@/lib/api";
 import { fmtScore, fmtValue } from "@/lib/format";
+import { useAsyncAction } from "@/lib/useAsyncAction";
+import { RiskCapitalForm } from "../RiskCapitalForm";
 import { VCard } from "../vestigo/Card";
 import { CardError } from "../CardStatus";
-
-const PROFILES = [
-  { key: "CONSERVATIVE", label: "Conservative" },
-  { key: "MODERATE", label: "Moderate" },
-  { key: "AGGRESSIVE", label: "Aggressive" },
-];
 
 function levelClass(level: string | null | undefined): string {
   if (level === "LOW") return "num-up";
@@ -22,25 +18,11 @@ function levelClass(level: string | null | undefined): string {
   return "t2";
 }
 
-type State =
-  | { status: "idle" | "loading" }
-  | { status: "ready"; data: PortfolioAdvisorResponse }
-  | { status: "error"; error: string };
-
 export function PortfolioAdvisor() {
   const [risk, setRisk] = useState("MODERATE");
   const [capital, setCapital] = useState(100_000_000);
-  const [state, setState] = useState<State>({ status: "idle" });
-
-  async function run() {
-    setState({ status: "loading" });
-    try {
-      const data = await postPortfolioAdvisor({ risk, capital, universe: "lq45" });
-      setState({ status: "ready", data });
-    } catch (err) {
-      setState({ status: "error", error: err instanceof Error ? err.message : "Gagal memuat" });
-    }
-  }
+  const { status, data, error, run } = useAsyncAction<PortfolioAdvisorResponse>();
+  const advise = () => run(() => postPortfolioAdvisor({ risk, capital, universe: "lq45" }));
 
   return (
     <VCard
@@ -48,46 +30,18 @@ export function PortfolioAdvisor() {
       sub="Alokasi sesuai profil risiko + penjelasan AI tiap bobot"
       subMono={false}
     >
-      <div className="cmp-row" style={{ alignItems: "flex-end" }}>
-        <div>
-          <p className="chip-label" style={{ marginBottom: 6 }}>
-            Profil risiko
-          </p>
-          <div className="cmp-row">
-            {PROFILES.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setRisk(p.key)}
-                className={`pill-chip ${risk === p.key ? "pill-on" : ""}`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <input
-          type="number"
-          value={capital}
-          min={1_000_000}
-          step={10_000_000}
-          onChange={(e) => setCapital(Number(e.target.value) || 0)}
-          className="field-input flex1"
-          style={{ minWidth: 160 }}
-          placeholder="Modal (Rp)"
-        />
-        <button
-          type="button"
-          onClick={run}
-          disabled={state.status === "loading"}
-          className="primary-btn"
-        >
-          {state.status === "loading" ? "Menyusun…" : "Sarankan Portofolio"}
-        </button>
-      </div>
+      <RiskCapitalForm
+        risk={risk}
+        setRisk={setRisk}
+        capital={capital}
+        setCapital={setCapital}
+        onSubmit={advise}
+        loading={status === "loading"}
+        submitLabel="Sarankan Portofolio"
+      />
 
-      {state.status === "error" && <CardError message={state.error} onRetry={run} />}
-      {state.status === "ready" && (
+      {status === "error" && <CardError message={error} onRetry={advise} />}
+      {status === "ready" && (
         <>
           <div className="table-wrap">
             <table className="dtable">
@@ -100,7 +54,7 @@ export function PortfolioAdvisor() {
                 </tr>
               </thead>
               <tbody>
-                {state.data.allocations.map((a) => (
+                {data.allocations.map((a) => (
                   <tr key={a.ticker}>
                     <td>
                       <span className="tk-pill">{a.ticker}</span>
@@ -115,13 +69,13 @@ export function PortfolioAdvisor() {
               </tbody>
             </table>
           </div>
-          {state.data.explanation && (
-            <p className="narrator" style={{ fontSize: 14 }}>{state.data.explanation}</p>
+          {data.explanation && (
+            <p className="narrator narrator-sm">{data.explanation}</p>
           )}
           <p className="feature-note">
             Saran alokasi portofolio sesuai profil risiko Anda, beserta alasan tiap bobot.
           </p>
-          <p className="disclaimer">{state.data.disclaimer}</p>
+          <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}
     </VCard>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ScreenerCandidate } from "@/lib/api";
 import { fmtInt, fmtScore, fmtValue } from "@/lib/format";
 import { VCard } from "./vestigo/Card";
 
@@ -15,6 +16,20 @@ export type ScreenerRow = {
   exit: number;
   value: number;
 };
+
+/** Map satu kandidat dari /api/screener ke baris tabel. */
+export function toScreenerRow(candidate: ScreenerCandidate): ScreenerRow {
+  return {
+    symbol: candidate.ticker,
+    strategy: candidate.strategy,
+    probabilityUp: candidate.prediction?.probability_up ?? 0,
+    entry: candidate.levels.entry,
+    stopLoss: candidate.levels.stop_loss,
+    takeProfit: candidate.levels.take_profit,
+    exit: candidate.levels.exit,
+    value: candidate.value,
+  };
+}
 
 type ScreenerTableProps = {
   isLoading?: boolean;

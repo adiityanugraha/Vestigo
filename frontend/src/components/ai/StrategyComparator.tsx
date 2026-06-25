@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { getCompareStrategy, type CompareStrategyResponse } from "@/lib/api";
 import { TECHNICAL_STRATEGIES } from "@/lib/strategies";
+import { useAsyncAction } from "@/lib/useAsyncAction";
 import { VCard } from "../vestigo/Card";
 import { CardError } from "../CardStatus";
 
@@ -20,27 +21,15 @@ const METRIC_LABELS: Record<string, string> = {
   recovery_factor: "Recovery Factor",
 };
 
-type State =
-  | { status: "idle" | "loading" }
-  | { status: "ready"; data: CompareStrategyResponse }
-  | { status: "error"; error: string };
+function metricKeys(d: CompareStrategyResponse): string[] {
+  return Array.from(new Set([...Object.keys(d.metrics_a), ...Object.keys(d.metrics_b)]));
+}
 
 export function StrategyComparator() {
   const [a, setA] = useState("breakout");
   const [b, setB] = useState("trend_following");
-  const [state, setState] = useState<State>({ status: "idle" });
-
-  async function run() {
-    setState({ status: "loading" });
-    try {
-      setState({ status: "ready", data: await getCompareStrategy(a, b) });
-    } catch (err) {
-      setState({ status: "error", error: err instanceof Error ? err.message : "Gagal memuat" });
-    }
-  }
-
-  const metricKeys = (d: CompareStrategyResponse) =>
-    Array.from(new Set([...Object.keys(d.metrics_a), ...Object.keys(d.metrics_b)]));
+  const { status, data, error, run } = useAsyncAction<CompareStrategyResponse>();
+  const compare = () => run(() => getCompareStrategy(a, b));
 
   return (
     <VCard
@@ -52,7 +41,7 @@ export function StrategyComparator() {
         className="cmp-row"
         onSubmit={(e) => {
           e.preventDefault();
-          void run();
+          compare();
         }}
       >
         <select value={a} onChange={(e) => setA(e.target.value)} className="select">
@@ -70,40 +59,40 @@ export function StrategyComparator() {
             </option>
           ))}
         </select>
-        <button type="submit" disabled={state.status === "loading"} className="primary-btn">
-          {state.status === "loading" ? "Membandingkan…" : "Bandingkan"}
+        <button type="submit" disabled={status === "loading"} className="primary-btn">
+          {status === "loading" ? "Membandingkan…" : "Bandingkan"}
         </button>
       </form>
 
-      {state.status === "error" && <CardError message={state.error} onRetry={run} />}
-      {state.status === "ready" && (
+      {status === "error" && <CardError message={error} onRetry={compare} />}
+      {status === "ready" && (
         <>
           <div className="table-wrap">
             <table className="dtable">
               <thead>
                 <tr>
                   <th>Metrik</th>
-                  <th className="ta-r">{state.data.strategy_a}</th>
-                  <th className="ta-r">{state.data.strategy_b}</th>
+                  <th className="ta-r">{data.strategy_a}</th>
+                  <th className="ta-r">{data.strategy_b}</th>
                 </tr>
               </thead>
               <tbody>
-                {metricKeys(state.data).map((k) => (
+                {metricKeys(data).map((k) => (
                   <tr key={k}>
                     <td className="t2">{METRIC_LABELS[k] ?? k}</td>
-                    <td className="ta-r mono">{state.data.metrics_a[k] ?? "—"}</td>
-                    <td className="ta-r mono">{state.data.metrics_b[k] ?? "—"}</td>
+                    <td className="ta-r mono">{data.metrics_a[k] ?? "—"}</td>
+                    <td className="ta-r mono">{data.metrics_b[k] ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {state.data.comparison && <p className="narrator" style={{ fontSize: 14 }}>{state.data.comparison}</p>}
+          {data.comparison && <p className="narrator narrator-sm">{data.comparison}</p>}
           <p className="feature-note">
             Membandingkan metrik historis dua strategi teknikal untuk melihat tradeoff
             imbal hasil & risiko.
           </p>
-          <p className="disclaimer">{state.data.disclaimer}</p>
+          <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}
     </VCard>

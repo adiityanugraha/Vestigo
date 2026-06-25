@@ -857,6 +857,26 @@ select {
   font-weight: 500;
 }
 
+/* ---------- chart box (candlestick container + overlays) ---------- */
+.chart-box {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-tile);
+  background: var(--s2);
+}
+.chart-fill {
+  position: absolute;
+  inset: 0;
+}
+.chart-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
 /* ---------- chart controls ---------- */
 .chart-ctrls {
   display: flex;
@@ -886,6 +906,14 @@ select {
   line-height: 1.7;
   color: var(--t1);
   text-wrap: pretty;
+}
+/* Narasi yang menyertai tabel/hasil — sedikit lebih kecil dari narator utama. */
+.narrator-sm {
+  font-size: 14px;
+}
+/* Sebar isi ke ujung (mis. baris daftar simbol … nilai). */
+.between {
+  justify-content: space-between;
 }
 .report-list {
   display: flex;

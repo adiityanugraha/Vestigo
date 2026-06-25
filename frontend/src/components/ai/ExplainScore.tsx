@@ -6,26 +6,14 @@
 import { useState } from "react";
 import { getExplainScore, type ExplainScoreResponse } from "@/lib/api";
 import { fmtScore } from "@/lib/format";
+import { useAsyncAction } from "@/lib/useAsyncAction";
 import { VCard } from "../vestigo/Card";
 import { CardError } from "../CardStatus";
 
-type State =
-  | { status: "idle" | "loading" }
-  | { status: "ready"; data: ExplainScoreResponse }
-  | { status: "error"; error: string };
-
 export function ExplainScore() {
   const [ticker, setTicker] = useState("BBCA");
-  const [state, setState] = useState<State>({ status: "idle" });
-
-  async function run() {
-    setState({ status: "loading" });
-    try {
-      setState({ status: "ready", data: await getExplainScore(ticker) });
-    } catch (err) {
-      setState({ status: "error", error: err instanceof Error ? err.message : "Gagal memuat" });
-    }
-  }
+  const { status, data, error, run } = useAsyncAction<ExplainScoreResponse>();
+  const explain = () => run(() => getExplainScore(ticker));
 
   return (
     <VCard
@@ -37,7 +25,7 @@ export function ExplainScore() {
         className="field"
         onSubmit={(e) => {
           e.preventDefault();
-          void run();
+          explain();
         }}
       >
         <input
@@ -46,28 +34,26 @@ export function ExplainScore() {
           className="field-input"
           placeholder="mis. BBRI"
         />
-        <button type="submit" disabled={state.status === "loading"} className="primary-btn">
-          {state.status === "loading" ? "Memuat…" : "Jelaskan"}
+        <button type="submit" disabled={status === "loading"} className="primary-btn">
+          {status === "loading" ? "Memuat…" : "Jelaskan"}
         </button>
       </form>
 
-      {state.status === "idle" && (
+      {status === "idle" && (
         <p className="empty-state">
           Uraikan kontribusi Tech / Momentum / ML terhadap Composite Score.
         </p>
       )}
-      {state.status === "error" && <CardError message={state.error} onRetry={run} />}
-      {state.status === "ready" && (
+      {status === "error" && <CardError message={error} onRetry={explain} />}
+      {status === "ready" && (
         <>
           <div className="card-head">
-            <span className="card-title">{state.data.ticker}</span>
+            <span className="card-title">{data.ticker}</span>
             <div className="cmp-row">
-              {state.data.overall_score != null && (
-                <span className="badge badge-info badge-full">
-                  Score {state.data.overall_score}
-                </span>
+              {data.overall_score != null && (
+                <span className="badge badge-info badge-full">Score {data.overall_score}</span>
               )}
-              {!state.data.ml_available && (
+              {!data.ml_available && (
                 <span className="small chip-warn">ML tak tersedia (bobot direnormalisasi)</span>
               )}
             </div>
@@ -84,7 +70,7 @@ export function ExplainScore() {
                 </tr>
               </thead>
               <tbody>
-                {state.data.breakdown.map((c) => (
+                {data.breakdown.map((c) => (
                   <tr key={c.component}>
                     <td>{c.label}</td>
                     <td className="ta-r mono">{c.score}</td>
@@ -96,12 +82,12 @@ export function ExplainScore() {
             </table>
           </div>
 
-          {state.data.summary && <p className="narrator" style={{ fontSize: 14 }}>{state.data.summary}</p>}
+          {data.summary && <p className="narrator narrator-sm">{data.summary}</p>}
           <p className="feature-note">
             Menjabarkan kontribusi tiap komponen (teknikal, momentum, ML) terhadap
             Composite Score saham.
           </p>
-          <p className="disclaimer">{state.data.disclaimer}</p>
+          <p className="disclaimer">{data.disclaimer}</p>
         </>
       )}
     </VCard>

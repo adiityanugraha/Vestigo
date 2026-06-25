@@ -35,7 +35,7 @@ function MoverList({ title, movers }: { title: string; movers: Mover[] }) {
         {movers.map((m) => {
           const dir = m.change_pct > 0 ? "num-up" : m.change_pct < 0 ? "num-down" : "";
           return (
-            <li key={m.ticker} style={{ justifyContent: "space-between" }}>
+            <li key={m.ticker} className="between">
               <span className="mini-sym">{m.ticker}</span>
               <span className={`mono ${dir}`}>{fmtPctFromFraction(m.change_pct, 2)}</span>
             </li>

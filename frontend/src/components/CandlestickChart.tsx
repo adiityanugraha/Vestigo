@@ -156,18 +156,11 @@ export function CandlestickChart({ symbol }: CandlestickChartProps) {
         </div>
       )}
 
-      <div
-        className="relative overflow-hidden"
-        style={{
-          height: pro ? 320 : 280,
-          borderRadius: "var(--r-tile)",
-          background: "var(--s2)",
-        }}
-      >
-        <div className="absolute inset-0" ref={containerRef} />
+      <div className="chart-box" style={{ height: pro ? 320 : 280 }}>
+        <div className="chart-fill" ref={containerRef} />
 
         {state.status === "loading" && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="chart-overlay">
             <div style={{ width: 208 }}>
               <p className="ta-c small t2">Memuat chart…</p>
               <div className="riskbar mt">
@@ -181,7 +174,7 @@ export function CandlestickChart({ symbol }: CandlestickChartProps) {
         )}
 
         {state.status === "error" && (
-          <div className="absolute inset-0 flex items-center justify-center p-6">
+          <div className="chart-overlay">
             <div className="empty-state">
               <p style={{ color: "var(--down)", fontWeight: 500 }}>Gagal memuat chart.</p>
               <p className="small mt">{state.error}</p>

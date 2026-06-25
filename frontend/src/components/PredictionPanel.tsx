@@ -1,34 +1,21 @@
 "use client";
 
-import { getScreener, type ScreenerCandidate } from "@/lib/api";
+import { getScreener } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { VCard } from "./vestigo/Card";
 import { CardError } from "./CardStatus";
-import { ScreenerTable, type ScreenerRow } from "./ScreenerTable";
+import { ScreenerTable, toScreenerRow } from "./ScreenerTable";
 
 type PredictionPanelProps = {
   onSelectSymbol: (symbol: string) => void;
   selectedSymbol: string;
 };
 
-function toRow(candidate: ScreenerCandidate): ScreenerRow {
-  return {
-    symbol: candidate.ticker,
-    strategy: candidate.strategy,
-    probabilityUp: candidate.prediction?.probability_up ?? 0,
-    entry: candidate.levels.entry,
-    stopLoss: candidate.levels.stop_loss,
-    takeProfit: candidate.levels.take_profit,
-    exit: candidate.levels.exit,
-    value: candidate.value,
-  };
-}
-
 export function PredictionPanel({ onSelectSymbol, selectedSymbol }: PredictionPanelProps) {
   const { status, data, error, reload } = useApi(() => getScreener(5, true), []);
 
-  const bsjp = data ? data.bsjp.map(toRow) : [];
-  const bpjs = data ? data.bpjs.map(toRow) : [];
+  const bsjp = data ? data.bsjp.map(toScreenerRow) : [];
+  const bpjs = data ? data.bpjs.map(toScreenerRow) : [];
 
   return (
     <>
