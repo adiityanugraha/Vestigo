@@ -1,0 +1,170 @@
+{
+  "model_version": "tsfm-30m-stageD-s2500",
+  "ringkasan": "Model memberi peringkat relatif antar-saham dengan sinyal yang terukur (IC walk-forward rata-rata 0.050, positif di 9 dari 10 periode). Namun setelah biaya transaksi IDX, strategi long-only di atasnya TIDAK mengalahkan beli-tahan IHSG pada 2016-2024, dan hasil di holdout 2025-2026 belum signifikan secara statistik. Gunakan sebagai alat riset, bukan sinyal beli.",
+  "arsitektur": {
+    "parameter": 33969299,
+    "jenis": "transformer time-series patch-based (PatchTST-style)",
+    "konteks_hari": 512,
+    "kanal": [
+      "log_return",
+      "log_range",
+      "log_volume_z",
+      "close_to_open",
+      "overnight_gap"
+    ],
+    "horizon_hari": 10,
+    "pretraining": "3 miliar patch-token, 5.381 instrumen IDX+US+makro, masked reconstruction"
+  },
+  "walk_forward": {
+    "n_fold": 10,
+    "periode": "2016-2024",
+    "ic_netral_rata": 0.04969928001131938,
+    "ic_netral_std": 0.029883118901125025,
+    "ic_min": -0.020039590926324263,
+    "ic_maks": 0.0934167698898068,
+    "fold_positif": 9,
+    "t_stat_lintas_fold": 4.989366756772666,
+    "per_fold": [
+      {
+        "fold": 1,
+        "val_mulai": "2016-01-01",
+        "ic_netral": -0.020039590926324263,
+        "icir": -0.13336623367946096
+      },
+      {
+        "fold": 2,
+        "val_mulai": "2016-11-24",
+        "ic_netral": 0.0676635336231463,
+        "icir": 0.8119904238651655
+      },
+      {
+        "fold": 3,
+        "val_mulai": "2017-10-19",
+        "ic_netral": 0.0934167698898068,
+        "icir": 0.7936712551957097
+      },
+      {
+        "fold": 4,
+        "val_mulai": "2018-09-13",
+        "ic_netral": 0.06696128388718,
+        "icir": 0.6548463212415832
+      },
+      {
+        "fold": 5,
+        "val_mulai": "2019-08-08",
+        "ic_netral": 0.07159853123521784,
+        "icir": 0.558110009298194
+      },
+      {
+        "fold": 6,
+        "val_mulai": "2020-07-02",
+        "ic_netral": 0.023568085376505142,
+        "icir": 0.178193262149226
+      },
+      {
+        "fold": 7,
+        "val_mulai": "2021-05-26",
+        "ic_netral": 0.0585665150582535,
+        "icir": 0.48820895588870633
+      },
+      {
+        "fold": 8,
+        "val_mulai": "2022-04-20",
+        "ic_netral": 0.05330908640950701,
+        "icir": 0.5675204642535231
+      },
+      {
+        "fold": 9,
+        "val_mulai": "2023-03-15",
+        "ic_netral": 0.04898247062573759,
+        "icir": 0.7900711734584576
+      },
+      {
+        "fold": 10,
+        "val_mulai": "2024-02-07",
+        "ic_netral": 0.03296611493416388,
+        "icir": 0.37977174147614196
+      }
+    ]
+  },
+  "backtest_2016_2024": {
+    "catatan": "Top-20 long-only, rebalance 10 hari, eksekusi di open hari berikutnya, lot 100, filter likuiditas 1 M/hari, ARA dikecualikan.",
+    "biaya_bolak_balik_persen": 0.7,
+    "tsfm_ret_tahunan_bersih": -0.08975458890199661,
+    "tsfm_sharpe_bersih": -0.5671040489657679,
+    "tsfm_ret_tahunan_kotor": 0.0803435742855072,
+    "ihsg_ret_tahunan": 0.07853495240136128,
+    "ihsg_sharpe": 0.5114232120869281,
+    "biaya_impas_persen": 0.4,
+    "permutasi_p_value": 0.055,
+    "deflated_sharpe": 0.690646654203126,
+    "per_tahun": {
+      "2016": {
+        "ret_tahunan": 0.03518221527338028,
+        "sharpe": 0.2533247663412029
+      },
+      "2017": {
+        "ret_tahunan": 0.12315476685762405,
+        "sharpe": 1.6257458435727759
+      },
+      "2018": {
+        "ret_tahunan": 0.32956087589263916,
+        "sharpe": 1.7680919125712993
+      },
+      "2019": {
+        "ret_tahunan": 0.007606957573443651,
+        "sharpe": 0.040627376385594015
+      },
+      "2020": {
+        "ret_tahunan": 0.20540477335453033,
+        "sharpe": 0.5584178972573018
+      },
+      "2021": {
+        "ret_tahunan": -0.136897012591362,
+        "sharpe": -0.9618032463785291
+      },
+      "2022": {
+        "ret_tahunan": -0.21086260676383972,
+        "sharpe": -1.4481433640029668
+      },
+      "2023": {
+        "ret_tahunan": -0.28172144293785095,
+        "sharpe": -2.398339242719542
+      },
+      "2024": {
+        "ret_tahunan": -0.1918022334575653,
+        "sharpe": -1.6443009357497345
+      }
+    },
+    "temuan": "Alpha kotor ada tapi habis oleh biaya. Patahan rezim 2021: IC tetap ~0,05 tapi seluruh desil rugi di 2021-2024 dan desil teratas memburuk."
+  },
+  "holdout_2025_2026": {
+    "catatan": "Dijalankan SEKALI, tidak pernah disentuh sebelumnya.",
+    "ic_netral": 0.05604162729030814,
+    "icir": 0.6214008489145665,
+    "desil_monoton_rho": 0.9757575757575757,
+    "tsfm_ret_tahunan_bersih": 0.10683256387710571,
+    "tsfm_sharpe_bersih": 0.417409010896916,
+    "ihsg_ret_tahunan": -0.07354308429648235,
+    "n_rebalance": 32,
+    "t_stat_return_bersih": 0.4703666922097984,
+    "temuan": "Positif dan mengalahkan IHSG, tapi hanya 32 rebalance - t 0.47, tidak signifikan. Satu periode positif, bukan bukti."
+  },
+  "per_keluaran": {
+    "rank_score": "Satu-satunya keluaran dengan sinyal peringkat teruji. Pakai ini.",
+    "prob_arah": "Terbukti hanya proxy volatilitas (IC ~0 setelah netral vol). Ditampilkan untuk transparansi, jangan dipakai sebagai sinyal.",
+    "predicted_vol": "Kalah dari GARCH(1,1), persistensi, dan konstan (QLIKE 0.868 vs GARCH 0.513).",
+    "regime": "Balanced accuracy 0.55 vs 0,25 acak. Label regime dibangun dengan lookahead - valid untuk analisis historis."
+  },
+  "keterbatasan": [
+    "Survivorship bias: daftar delisting IDX hanya dapat direkonstruksi sejak 2020 (27 emiten); universe 2010-2019 hampir sepenuhnya emiten yang masih hidup.",
+    "Biaya transaksi (komisi 0,15/0,25 persen + slippage 0,15) adalah asumsi, belum diverifikasi ke broker.",
+    "Dividen tidak disesuaikan: return adalah price return, bukan total return.",
+    "Emiten di Vestigo (81) jauh lebih sedikit dari saat pelatihan (576); skor tetap per emiten, tapi persentil dihitung di antara 81 itu."
+  ],
+  "paritas_onnx": {
+    "ambang": 0.0001,
+    "lulus": true,
+    "maks_selisih": 2.384185791015625e-06
+  }
+}

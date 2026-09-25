@@ -4,6 +4,8 @@ Jadwal (Asia/Jakarta) - Phase 2 + tambahan Phase 3 (Day 13):
   07:00  Update market data            -> job_update_market_data
   07:15  Refresh fundamental_derived   -> job_refresh_fundamental_derived   (P3)
   07:30  Jalankan 9 strategi           -> job_run_all_strategies            (P3)
+  07:45  Prediksi Vestigo-TSFM         -> job_generate_tsfm_predictions     (P6)
+  07:50  Realisasi prediksi TSFM       -> job_resolve_tsfm_outcomes         (P6)
   09:30  Generate screener (BPJS)      -> job_run_screener
   10:00  Generate screener (BPJS)      -> job_run_screener
   15:30  Generate screener (BSJP)      -> job_run_screener
@@ -47,6 +49,9 @@ SCHEDULE: list[tuple[str, object, int, int, str | None]] = [
     ("update_market_data", jobs.job_update_market_data, 7, 0, None),
     ("refresh_fundamental_derived", jobs.job_refresh_fundamental_derived, 7, 15, None),
     ("run_all_strategies", jobs.job_run_all_strategies, 7, 30, None),
+    # Phase 6 - Vestigo-TSFM: setelah market data final, sebelum bursa buka.
+    ("tsfm_predict_0745", jobs.job_generate_tsfm_predictions, 7, 45, None),
+    ("tsfm_outcomes_0750", jobs.job_resolve_tsfm_outcomes, 7, 50, None),
     ("screener_bpjs_0930", jobs.job_run_screener, 9, 30, None),
     ("screener_bpjs_1000", jobs.job_run_screener, 10, 0, None),
     ("screener_bsjp_1530", jobs.job_run_screener, 15, 30, None),

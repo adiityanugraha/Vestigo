@@ -567,3 +567,63 @@ class MarketNarrative(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class TsfmPrediction(Base):
+    """Prediksi harian Vestigo-TSFM (Phase 6, M8).
+
+    Satu baris per (emiten, tanggal sesi, versi model). `prediction_date` adalah
+    SESI TERAKHIR YANG SUDAH FINAL yang dipakai sebagai input - bukan tanggal job
+    berjalan. Bar bertanggal hari ini tidak pernah dipakai (bisa setengah jadi).
+
+    Keluaran utama untuk peringkat adalah `rank_score`; head arah terbukti hanya
+    proxy volatilitas (Stage B), jadi prob_* disimpan untuk transparansi, bukan
+    untuk dipakai sebagai sinyal.
+    """
+
+    __tablename__ = "tsfm_predictions"
+    __table_args__ = (
+        UniqueConstraint("ticker", "prediction_date", "model_version",
+                         name="uq_tsfm_pred_ticker_date_version"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ticker: Mapped[str] = mapped_column(
+        String(12), ForeignKey("stocks.ticker", ondelete="CASCADE"), index=True
+    )
+    prediction_date: Mapped[date] = mapped_column(Date, index=True)
+    model_version: Mapped[str] = mapped_column(String(40))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    rank_score: Mapped[float] = mapped_column(Float)
+    rank_pct: Mapped[float] = mapped_column(Float)          # persentil lintas emiten hari itu
+    prob_down: Mapped[float] = mapped_column(Float)
+    prob_flat: Mapped[float] = mapped_column(Float)
+    prob_up: Mapped[float] = mapped_column(Float)
+    predicted_vol: Mapped[float] = mapped_column(Float)    # vol harian, bukan log
+    regime: Mapped[str] = mapped_column(String(16))
+    regime_prob: Mapped[float] = mapped_column(Float)
+    bad_rows: Mapped[int] = mapped_column(Integer)         # baris nol di window (maks 8)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class TsfmOutcome(Base):
+    """Realisasi prediksi TSFM, diisi setelah `horizon_days` sesi berlalu.
+
+    Tabel ini yang mengubah sistem dari backtest yang bisa di-overfit menjadi
+    track record live yang tidak bisa dibantah (Blueprint 7.3). Return dan vol
+    dihitung dengan definisi yang sama dengan label training (log return
+    close-ke-close, std log return harian).
+    """
+
+    __tablename__ = "tsfm_outcomes"
+
+    prediction_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("tsfm_predictions.id", ondelete="CASCADE"), primary_key=True
+    )
+    realized_return: Mapped[float] = mapped_column(Float)
+    realized_vol: Mapped[float] = mapped_column(Float)
+    resolved_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

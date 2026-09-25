@@ -336,3 +336,77 @@ def job_generate_daily_report() -> int:
         daily_report_api.get_daily_report(format="json", refresh=True, db=db)
     log.info("generate_daily_report: laporan harian dibuat & di-cache")
     return 1
+
+
+def job_generate_tsfm_predictions() -> int:
+    """07:45 (Phase 6) - Prediksi Vestigo-TSFM -> tsfm_predictions.
+
+    Dijalankan SETELAH update_market_data (07:00) dan sebelum bursa buka, jadi
+    sesi terakhir yang dipakai adalah kemarin dalam bentuk final. Idempoten:
+    menjalankannya dua kali di hari yang sama tidak menduplikasi baris.
+    """
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    from app.db.models import TsfmPrediction
+    from app.ml import tsfm_inference as ti
+
+    if not ti.model_tersedia():
+        log.warning("generate_tsfm: model tidak ada di %s, dilewati", ti._model_path())
+        return 0
+    with SessionLocal() as db:
+        bars = ti.load_bars(db)
+        sesi = ti.sesi_final(bars)
+        if len(sesi) == 0:
+            return 0
+        umur = ti.data_basi(sesi)
+        if umur is not None:
+            log.error("generate_tsfm: DIBATALKAN - sesi terakhir %s sudah %s hari; "
+                      "job update_market_data kemungkinan mati", sesi[-1].date(), umur)
+            return 0
+        as_of, pred = ti.predict_all(bars, sesi)
+        if not pred:
+            log.info("generate_tsfm: tidak ada emiten dengan window sah per %s", as_of.date())
+            return 0
+        rows = [{**p, "prediction_date": as_of.date(), "model_version": ti.MODEL_VERSION,
+                 "horizon_days": ti.HORIZON} for p in pred]
+        db.execute(pg_insert(TsfmPrediction).values(rows).on_conflict_do_nothing(
+            constraint="uq_tsfm_pred_ticker_date_version"))
+        db.commit()
+    log.info("generate_tsfm: %s prediksi per %s", len(rows), as_of.date())
+    return len(rows)
+
+
+def job_resolve_tsfm_outcomes() -> int:
+    """07:50 (Phase 6) - isi tsfm_outcomes untuk prediksi yang horizonnya sudah lewat.
+
+    Inilah yang membangun track record live M10: setiap prediksi dicocokkan
+    dengan return yang benar-benar terjadi, tanpa bisa diubah belakangan.
+    """
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    from app.db.models import TsfmOutcome, TsfmPrediction
+    from app.ml import tsfm_inference as ti
+
+    with SessionLocal() as db:
+        belum = db.execute(
+            select(TsfmPrediction.id, TsfmPrediction.ticker, TsfmPrediction.prediction_date,
+                   TsfmPrediction.horizon_days)
+            .outerjoin(TsfmOutcome, TsfmOutcome.prediction_id == TsfmPrediction.id)
+            .where(TsfmOutcome.prediction_id.is_(None))
+        ).all()
+        if not belum:
+            return 0
+        bars = ti.load_bars(db)
+        sesi = ti.sesi_final(bars)
+        rows = []
+        for pid, tk, tgl, h in belum:
+            if tk not in bars:
+                continue
+            r = ti.realisasi(bars[tk], sesi, tgl, horizon=h)
+            if r is not None:
+                rows.append({"prediction_id": pid, "realized_return": r[0], "realized_vol": r[1]})
+        if rows:
+            db.execute(pg_insert(TsfmOutcome).values(rows).on_conflict_do_nothing())
+            db.commit()
+    log.info("resolve_tsfm: %s dari %s prediksi terselesaikan", len(rows), len(belum))
+    return len(rows)

@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     # (resolve di app.ml.inference). Override lewat env ONNX_MODEL_PATH bila perlu.
     onnx_model_path: str | None = None
 
+    # Model Vestigo-TSFM (Phase 6). Default None -> backend/app/ml/tsfm.onnx.
+    # File 137 MB, DI LUAR git (melampaui batas 100 MB GitHub); salin dari
+    # vestigo-tsfm/artifacts/tsfm.onnx atau arahkan lewat env TSFM_MODEL_PATH.
+    tsfm_model_path: str | None = None
+
     # Scheduler (Day 13). Job harian otomatis dijalankan saat startup FastAPI.
     # Set SCHEDULER_ENABLED=false di .env untuk mematikan (mis. saat testing).
     scheduler_enabled: bool = True

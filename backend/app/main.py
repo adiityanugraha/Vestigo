@@ -52,6 +52,7 @@ from app.api import (
     strategy_matrix,
     strength,
     support_resistance,
+    tsfm,
     walkforward,
     why,
 )
@@ -165,6 +166,7 @@ app.include_router(sector_rotation.router)
 app.include_router(ai_analysis.router)
 app.include_router(explain_score.router)
 app.include_router(chat.router)
+app.include_router(tsfm.router)
 app.include_router(natural_query.router)
 app.include_router(compare_strategy.router)
 app.include_router(portfolio_advisor.router)

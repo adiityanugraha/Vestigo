@@ -54,3 +54,6 @@ frontend/.npmrc
 # --- Misc ---
 .DS_Store
 *.log
+
+# Phase 6: model Vestigo-TSFM 137 MB, melampaui batas 100 MB GitHub
+backend/app/ml/tsfm.onnx
