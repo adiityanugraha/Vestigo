@@ -12,7 +12,8 @@ type NavKey =
   | "Strategies"
   | "Quant"
   | "AI"
-  | "Backtest";
+  | "Backtest"
+  | "Model";
 
 type NavItem = {
   label: NavKey;
@@ -30,6 +31,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Quant", href: "/quant", lite: false, icon: "M4 19l5-6 4 3 6-9M4 19h16" },
   { label: "AI", href: "/ai", lite: true, icon: "M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" },
   { label: "Backtest", href: "/backtest", lite: false, icon: "M4 5h16v14H4zM4 10h16M9 5v14" },
+  // Phase 6: Vestigo-TSFM (transformer time-series). Pro saja - halaman riset.
+  { label: "Model", href: "/model", lite: false, icon: "M4 12h3l3-7 4 14 3-7h3" },
 ];
 
 const PRO_ONLY_PATHS = NAV_ITEMS.filter((i) => !i.lite).map((i) => i.href);
@@ -106,7 +109,12 @@ export function DashboardShell({
 
   // Lite reflow: a Pro-only route is unreachable in Lite - bounce to Dashboard.
   useEffect(() => {
-    if (ready && mode === "LITE" && PRO_ONLY_PATHS.includes(pathname)) {
+    if (
+      ready &&
+      mode === "LITE" &&
+      // prefiks, bukan persis: sub-rute seperti /model/performance juga Pro saja
+      PRO_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+    ) {
       router.replace("/");
     }
   }, [ready, mode, pathname, router]);

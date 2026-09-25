@@ -3,6 +3,9 @@
 GET /api/tsfm/predictions   peringkat harian dari model, terbaru atau per tanggal
 GET /api/tsfm/track-record  IC live dari prediksi yang sudah terealisasi (M10)
 GET /api/tsfm/model-card    hasil riset lengkap, termasuk temuan negatif
+GET /api/tsfm/ui/{nama}     data halaman UI (performance, calibration, backtest,
+                            training) - dihitung dari artefak riset oleh
+                            vestigo-tsfm/scripts/export_ui.py, tidak diketik tangan
 
 Setiap respons membawa `status_riset` - ringkasan jujur apa yang terbukti dan
 apa yang tidak. Ini bukan disclaimer formalitas: backtest 2016-2024 menunjukkan
@@ -23,13 +26,15 @@ from scipy.stats import spearmanr
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import TsfmOutcome, TsfmPrediction
+from app.db.models import Stock, TsfmOutcome, TsfmPrediction
 from app.db.session import get_db
 from app.ml.tsfm_inference import MODEL_VERSION
 
 router = APIRouter(prefix="/api/tsfm", tags=["tsfm"])
 
 MODEL_CARD = Path(__file__).resolve().parents[1] / "ml" / "tsfm_model_card.json"
+UI_DIR = Path(__file__).resolve().parents[1] / "ml" / "tsfm_ui"
+UI_DATA = ("performance", "calibration", "backtest", "training")
 MIN_EMITEN_IC = 20            # sama dgn metrik riset: IC per hari butuh cross-section cukup
 
 
@@ -55,19 +60,22 @@ def predictions(tanggal: date | None = Query(None, description="default: tanggal
         if tanggal is None:
             raise HTTPException(404, "Belum ada prediksi TSFM. Jalankan job_generate_tsfm_predictions.")
     rows = db.execute(
-        select(TsfmPrediction).where(TsfmPrediction.prediction_date == tanggal,
-                                     TsfmPrediction.model_version == MODEL_VERSION)
+        select(TsfmPrediction, Stock.name, Stock.sector)
+        .join(Stock, Stock.ticker == TsfmPrediction.ticker, isouter=True)
+        .where(TsfmPrediction.prediction_date == tanggal,
+               TsfmPrediction.model_version == MODEL_VERSION)
         .order_by(TsfmPrediction.rank_score.desc()).limit(limit)
-    ).scalars().all()
+    ).all()
     return {
         "prediction_date": tanggal, "model_version": MODEL_VERSION, "horizon_days": 10,
         "n": len(rows), "status_riset": _status(),
         "predictions": [{
-            "ticker": r.ticker, "rank_score": r.rank_score, "rank_pct": r.rank_pct,
+            "ticker": r.ticker, "name": nama, "sector": sektor,
+            "rank_score": r.rank_score, "rank_pct": r.rank_pct,
             "predicted_vol": r.predicted_vol, "regime": r.regime, "regime_prob": r.regime_prob,
             "prob": {"down": r.prob_down, "flat": r.prob_flat, "up": r.prob_up},
             "bad_rows": r.bad_rows,
-        } for r in rows],
+        } for r, nama, sektor in rows],
     }
 
 
@@ -111,3 +119,17 @@ def track_record(db: Session = Depends(get_db)) -> dict:
 @router.get("/model-card")
 def get_model_card() -> dict:
     return model_card()
+
+
+@lru_cache(maxsize=len(UI_DATA))
+def _ui(nama: str) -> dict:
+    return json.loads((UI_DIR / f"{nama}.json").read_text(encoding="utf-8"))
+
+
+@router.get("/ui/{nama}")
+def ui_data(nama: str) -> dict:
+    if nama not in UI_DATA:
+        raise HTTPException(404, f"Data UI tidak dikenal: {nama}")
+    if not (UI_DIR / f"{nama}.json").exists():
+        raise HTTPException(503, "Data UI TSFM belum diekspor (vestigo-tsfm/scripts/export_ui.py)")
+    return _ui(nama)

@@ -85,3 +85,17 @@ def test_model_card_konsisten():
     assert "bukan sinyal beli" in k["ringkasan"]
     assert k["paritas_onnx"]["lulus"] and k["paritas_onnx"]["maks_selisih"] < 1e-4
     assert len(k["walk_forward"]["per_fold"]) == k["walk_forward"]["n_fold"] == 10
+
+
+def test_data_ui_lengkap_dan_konsisten():
+    """Keempat berkas UI ada dan angka kuncinya cocok dengan model card."""
+    from app.api.tsfm import UI_DATA, _ui, model_card
+
+    for nama in UI_DATA:
+        assert _ui(nama)
+    k = model_card()
+    assert abs(_ui("performance")["ic_harian_ringkas"]["rata"] - k["walk_forward"]["ic_netral_rata"]) < 1e-3
+    g = next(x for x in _ui("backtest")["grid"] if x["periode"].startswith("walk")
+             and x["hold"] == 10 and x["top_k"] == 20 and x["biaya"] == 0.7)
+    assert abs(g["ret_tahunan"] - k["backtest_2016_2024"]["tsfm_ret_tahunan_bersih"]) < 1e-9
+    assert len(_ui("training")["stage_a"]["sesi"]) == 5

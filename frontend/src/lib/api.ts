@@ -906,3 +906,169 @@ export type MetaResponse = { data_date: string | null; universe: number };
 export function getMeta(): Promise<MetaResponse> {
   return apiGet("/api/meta");
 }
+
+// ---------------------------------------------------------------------------
+// Phase 6 - Vestigo-TSFM. Semua angka riset dihitung di repo vestigo-tsfm dari
+// artefak sungguhan (scripts/export_ui.py, make_model_card.py) lalu disajikan
+// apa adanya oleh backend. Frontend hanya menampilkan, tidak menghitung ulang.
+// ---------------------------------------------------------------------------
+
+export type TsfmStatus = { ringkasan: string; gunakan: string; jangan: string };
+
+export type TsfmPrediction = {
+  ticker: string;
+  name: string | null;
+  sector: string | null;
+  rank_score: number;
+  rank_pct: number;
+  predicted_vol: number;
+  regime: "trending_up" | "trending_down" | "ranging" | "high_vol";
+  regime_prob: number;
+  prob: { down: number; flat: number; up: number };
+  bad_rows: number;
+};
+
+export type TsfmPredictionsResponse = {
+  prediction_date: string;
+  model_version: string;
+  horizon_days: number;
+  n: number;
+  status_riset: TsfmStatus;
+  predictions: TsfmPrediction[];
+};
+
+export type TsfmTrackRecord = {
+  model_version: string;
+  n_prediksi_terealisasi: number;
+  n_hari: number;
+  target_m10_hari: number;
+  ringkasan: { ic_rata: number; ic_std: number; icir: number | null; ic_positif_pct: number } | null;
+  pembanding_riset: { ic_walk_forward: number; catatan: string };
+  harian: { tanggal: string; ic: number; n: number }[];
+};
+
+export type TsfmModelCard = {
+  model_version: string;
+  ringkasan: string;
+  walk_forward: { n_fold: number; ic_netral_rata: number; fold_positif: number; t_stat_lintas_fold: number };
+  backtest_2016_2024: {
+    tsfm_ret_tahunan_bersih: number;
+    tsfm_ret_tahunan_kotor: number;
+    ihsg_ret_tahunan: number;
+    biaya_impas_persen: number;
+    permutasi_p_value: number;
+    deflated_sharpe: number;
+    temuan: string;
+  };
+  holdout_2025_2026: {
+    ic_netral: number;
+    tsfm_ret_tahunan_bersih: number;
+    ihsg_ret_tahunan: number;
+    n_rebalance: number;
+    t_stat_return_bersih: number;
+    temuan: string;
+  };
+  per_keluaran: Record<"rank_score" | "prob_arah" | "predicted_vol" | "regime", string>;
+  keterbatasan: string[];
+  paritas_onnx: { ambang: number; lulus: boolean; maks_selisih: number };
+};
+
+export type TsfmPerformance = {
+  ic_harian_ringkas: { n_hari: number; rata: number; std: number; positif_pct: number };
+  rolling_ic: { tanggal: string; ic: number; lo: number; hi: number }[];
+  catatan_rolling: string;
+  reliability: Record<"turun" | "datar" | "naik", { prediksi: number; teramati: number; n: number }[]>;
+  confusion: Record<string, { matriks: number[][]; n: number }>;
+  per_fold: {
+    fold: number;
+    val_mulai: string;
+    n: number;
+    ic_netral: number;
+    icir_netral: number;
+    ic_reversal_netral: number;
+    dir_bal_acc: number;
+    qlike_model: number;
+    qlike_konstan: number;
+    regime_bal_acc: number;
+  }[];
+  pembanding: {
+    peringkat: { nama: string; ic_netral: number; utama?: boolean; catatan?: string }[];
+    strategi_bersih: { nama: string; ret_tahunan: number; sharpe: number; maks_drawdown: number; utama?: boolean }[];
+    volatilitas_qlike: { nama: string; qlike: number; utama?: boolean }[];
+  };
+};
+
+export type TsfmDesil = {
+  desil: number;
+  ret_median: number;
+  ret_rata: number;
+  hit_rate: number;
+  n: number;
+};
+
+export type TsfmCalibration = {
+  desil_skor: Record<string, TsfmDesil[]>;
+  confidence_arah: { dari: number; sampai: number; conf_rata: number; akurasi: number; n: number }[];
+  catatan: string;
+};
+
+export type TsfmBacktestConfig = {
+  periode: string;
+  hold: number;
+  top_k: number;
+  biaya: number;
+  ret_tahunan: number;
+  sharpe: number;
+  maks_drawdown: number;
+  hit_rate: number;
+  n_rebal: number;
+  /** [tanggal, ekuitas, drawdown] */
+  kurva: [string, number, number][];
+};
+
+export type TsfmBacktest = {
+  grid: TsfmBacktestConfig[];
+  ihsg: Record<string, { ret_tahunan: number; sharpe: number; maks_drawdown: number; kurva: [string, number][] }>;
+  pilihan: { periode: string[]; hold: number[]; top_k: number[]; biaya: number[] };
+  catatan: string;
+};
+
+export type TsfmTitik = { step: number; jam: number; loss: number; win_s: number; suhu: number; clock: number; ram_mb: number };
+export type TsfmSesi = { mulai_step: number; akhir_step: number; jam_mulai: number; jam_akhir: number };
+export type TsfmFinetuneRun = {
+  id: string;
+  induk: string;
+  jam: number;
+  step_akhir: number;
+  best_step: number;
+  best_val_loss: number;
+  eval: { step: number; val_loss: number; bal_acc: number; val_rank: number | null }[];
+};
+
+export type TsfmTraining = {
+  silsilah: { id: string; induk: string | null; status: string; alasan: string; step_akhir?: number; jam?: number }[];
+  stage_a: { titik: TsfmTitik[]; sesi: TsfmSesi[]; catatan: string };
+  stage_a_rusak: { titik: TsfmTitik[]; sesi: TsfmSesi[] };
+  stage_b: TsfmFinetuneRun;
+  stage_b_v1: TsfmFinetuneRun;
+  stage_c: TsfmFinetuneRun[];
+  stage_d: TsfmFinetuneRun;
+  checkpoint: { nama: string; step: number; metrik: string; catatan: string }[];
+  perangkat: { gpu: string; presisi: string; catatan_suhu: string };
+};
+
+export function getTsfmPredictions(limit = 200): Promise<TsfmPredictionsResponse> {
+  return apiGet<TsfmPredictionsResponse>("/api/tsfm/predictions", { limit });
+}
+
+export function getTsfmTrackRecord(): Promise<TsfmTrackRecord> {
+  return apiGet<TsfmTrackRecord>("/api/tsfm/track-record");
+}
+
+export function getTsfmModelCard(): Promise<TsfmModelCard> {
+  return apiGet<TsfmModelCard>("/api/tsfm/model-card");
+}
+
+export function getTsfmUi<T>(nama: "performance" | "calibration" | "backtest" | "training"): Promise<T> {
+  return apiGet<T>(`/api/tsfm/ui/${nama}`);
+}
