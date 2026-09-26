@@ -86,11 +86,16 @@ def track_record(db: Session = Depends(get_db)) -> dict:
     Dihitung dengan definisi yang sama dengan riset (Spearman per hari, minimal
     20 emiten). Blueprint M10: dilaporkan apa adanya, termasuk kalau negatif.
     """
-    rows = db.execute(
-        select(TsfmPrediction.prediction_date, TsfmPrediction.rank_score, TsfmOutcome.realized_return)
+    semua = db.execute(
+        select(TsfmPrediction.prediction_date, TsfmPrediction.rank_score, TsfmOutcome.realized_return,
+               TsfmPrediction.susulan)
         .join(TsfmOutcome, TsfmOutcome.prediction_id == TsfmPrediction.id)
         .where(TsfmPrediction.model_version == MODEL_VERSION)
     ).all()
+    # Track record live hanya dari prediksi yang dibuat sebelum horizonnya mulai
+    # terlihat. Baris susulan dihitung terpisah, tidak dicampur diam-diam.
+    rows = [(d, s, r) for d, s, r, sus in semua if not sus]
+    n_susulan = sum(1 for *_, sus in semua if sus)
     per_hari: dict = {}
     for d, s, r in rows:
         per_hari.setdefault(d, []).append((s, r))
@@ -109,6 +114,7 @@ def track_record(db: Session = Depends(get_db)) -> dict:
     riset = model_card()["walk_forward"]
     return {
         "model_version": MODEL_VERSION, "n_prediksi_terealisasi": len(rows),
+        "n_susulan_dikecualikan": n_susulan,
         "n_hari": len(harian), "target_m10_hari": 60, "ringkasan": ringkas,
         "pembanding_riset": {"ic_walk_forward": riset["ic_netral_rata"],
                              "catatan": "IC riset dinetralkan terhadap volatilitas; IC live di sini mentah."},

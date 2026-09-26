@@ -338,12 +338,15 @@ def job_generate_daily_report() -> int:
     return 1
 
 
-def job_generate_tsfm_predictions() -> int:
+def job_generate_tsfm_predictions(as_of=None, paksa_susulan: bool = False) -> int:
     """07:45 (Phase 6) - Prediksi Vestigo-TSFM -> tsfm_predictions.
 
     Dijalankan SETELAH update_market_data (07:00) dan sebelum bursa buka, jadi
     sesi terakhir yang dipakai adalah kemarin dalam bentuk final. Idempoten:
-    menjalankannya dua kali di hari yang sama tidak menduplikasi baris.
+    menjalankannya dua kali tidak menduplikasi baris - baris PERTAMA yang
+    menang, jadi versi live tidak pernah tertimpa versi susulan.
+
+    `as_of` diisi hanya oleh mode susulan (app.scheduler.tsfm_harian --susulan).
     """
     from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -358,22 +361,30 @@ def job_generate_tsfm_predictions() -> int:
         sesi = ti.sesi_final(bars)
         if len(sesi) == 0:
             return 0
-        umur = ti.data_basi(sesi)
-        if umur is not None:
-            log.error("generate_tsfm: DIBATALKAN - sesi terakhir %s sudah %s hari; "
-                      "job update_market_data kemungkinan mati", sesi[-1].date(), umur)
-            return 0
-        as_of, pred = ti.predict_all(bars, sesi)
+        if as_of is None:
+            umur = ti.data_basi(sesi)
+            if umur is not None:
+                log.error("generate_tsfm: DIBATALKAN - sesi terakhir %s sudah %s hari; "
+                          "job update_market_data kemungkinan mati", sesi[-1].date(), umur)
+                return 0
+        as_of, pred = ti.predict_all(bars, sesi, as_of=as_of)
         if not pred:
             log.info("generate_tsfm: tidak ada emiten dengan window sah per %s", as_of.date())
             return 0
+        from datetime import datetime
+
+        susulan = paksa_susulan or datetime.now(ti.WIB) >= ti.batas_live(as_of)
+        if susulan:
+            log.warning("generate_tsfm: prediksi %s ditandai SUSULAN (dibuat setelah %s)",
+                        as_of.date(), ti.batas_live(as_of).strftime("%Y-%m-%d %H:%M WIB"))
         rows = [{**p, "prediction_date": as_of.date(), "model_version": ti.MODEL_VERSION,
-                 "horizon_days": ti.HORIZON} for p in pred]
-        db.execute(pg_insert(TsfmPrediction).values(rows).on_conflict_do_nothing(
-            constraint="uq_tsfm_pred_ticker_date_version"))
+                 "horizon_days": ti.HORIZON, "susulan": susulan} for p in pred]
+        baru = db.execute(pg_insert(TsfmPrediction).values(rows).on_conflict_do_nothing(
+            constraint="uq_tsfm_pred_ticker_date_version")).rowcount
         db.commit()
-    log.info("generate_tsfm: %s prediksi per %s", len(rows), as_of.date())
-    return len(rows)
+    log.info("generate_tsfm: %s prediksi per %s (%s baru, sisanya sudah ada)",
+             len(rows), as_of.date(), baru)
+    return baru
 
 
 def job_resolve_tsfm_outcomes() -> int:

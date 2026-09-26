@@ -99,3 +99,22 @@ def test_data_ui_lengkap_dan_konsisten():
              and x["hold"] == 10 and x["top_k"] == 20 and x["biaya"] == 0.7)
     assert abs(g["ret_tahunan"] - k["backtest_2016_2024"]["tsfm_ret_tahunan_bersih"]) < 1e-9
     assert len(_ui("training")["stage_a"]["sesi"]) == 5
+
+
+def test_batas_live_open_sesi_berikutnya():
+    """Prediksi hanya live bila dibuat sebelum 09:00 WIB hari kerja setelah as_of."""
+    from datetime import datetime
+
+    b = ti.batas_live(pd.Timestamp("2026-09-24"))              # Kamis -> Jumat
+    assert b == datetime(2026, 9, 25, 9, 0, tzinfo=ti.WIB)
+    b = ti.batas_live(pd.Timestamp("2026-09-25"))              # Jumat -> Senin, lewati akhir pekan
+    assert b == datetime(2026, 9, 28, 9, 0, tzinfo=ti.WIB)
+    # kasus nyata: job pertama jalan Jumat 09:26 WIB untuk sesi Kamis -> susulan
+    assert datetime(2026, 9, 25, 9, 26, tzinfo=ti.WIB) >= ti.batas_live(pd.Timestamp("2026-09-24"))
+
+
+def test_skrip_harian_bisa_diimpor_dan_argumen_susulan():
+    from app.scheduler import tsfm_harian
+
+    assert callable(tsfm_harian.harian) and callable(tsfm_harian.susulan)
+    assert tsfm_harian.LOG.name == "tsfm_harian.log"

@@ -36,6 +36,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -603,6 +604,11 @@ class TsfmPrediction(Base):
     regime: Mapped[str] = mapped_column(String(16))
     regime_prob: Mapped[float] = mapped_column(Float)
     bad_rows: Mapped[int] = mapped_column(Integer)         # baris nol di window (maks 8)
+    # True = prediksi dibuat SETELAH sesi berikutnya mungkin sudah buka (09:00 WIB),
+    # atau dihitung ulang lewat mode susulan. Angkanya identik dengan versi live
+    # (model & bar final tidak berubah), tapi sebagian horizon sudah bisa terlihat,
+    # jadi baris ini TIDAK masuk track record live M10. Lihat tsfm_inference.batas_live.
+    susulan: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

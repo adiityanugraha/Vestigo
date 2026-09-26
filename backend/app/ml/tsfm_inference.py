@@ -106,6 +106,21 @@ def sesi_final(bars: dict[str, pd.DataFrame], hari_ini: date | None = None) -> p
     return sesi[sesi < batas]
 
 
+def batas_live(as_of: pd.Timestamp) -> datetime:
+    """Batas waktu agar prediksi untuk `as_of` masih berstatus live.
+
+    Posisi dieksekusi di open sesi BERIKUTNYA (09:00 WIB). Prediksi yang dibuat
+    setelah itu sudah bisa "melihat" sebagian horizonnya. Kalender bursa ke depan
+    tidak diketahui, jadi sesi berikutnya diasumsikan hari kerja pertama setelah
+    `as_of`. Kalau hari itu ternyata libur, prediksi yang sebenarnya masih live
+    ikut ditandai susulan - salahnya ke arah yang aman, tidak sebaliknya.
+    """
+    d = pd.Timestamp(as_of).normalize() + pd.Timedelta(days=1)
+    while d.weekday() >= 5:
+        d += pd.Timedelta(days=1)
+    return datetime(d.year, d.month, d.day, 9, 0, tzinfo=WIB)
+
+
 def data_basi(sessions: pd.DatetimeIndex, hari_ini: date | None = None) -> int | None:
     """Umur sesi final terakhir (hari) bila melewati batas, None bila segar.
 

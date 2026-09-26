@@ -57,3 +57,6 @@ frontend/.npmrc
 
 # Phase 6: model Vestigo-TSFM 137 MB, melampaui batas 100 MB GitHub
 backend/app/ml/tsfm.onnx
+
+# Phase 6: log job harian TSFM (termasuk rotasi .log.1 .log.2)
+backend/logs/
