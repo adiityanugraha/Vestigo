@@ -33,6 +33,12 @@ import pandas as pd
 LOG = Path(__file__).resolve().parents[2] / "logs" / "tsfm_harian.log"
 log = logging.getLogger("tsfm_harian")
 
+# Dump DB ke disk fisik lain (C, bukan E tempat proyek): prediksi live M10 tidak
+# bisa dibuat ulang. Disalin ke flashdisk oleh vestigo-tsfm/scripts/backup.ps1.
+BACKUP_DB = Path(r"C:\Backup\Vestigo\db")
+PG_DUMP = Path(r"C:\Program Files\PostgreSQL\18\bin\pg_dump.exe")
+SIMPAN_DUMP = 7         # dump terbaru selalu superset yang lama, 7 hari cukup
+
 
 def _atur_log() -> None:
     LOG.parent.mkdir(exist_ok=True)
@@ -59,7 +65,35 @@ def harian() -> int:
     n_pred = jobs.job_generate_tsfm_predictions()
     n_out = jobs.job_resolve_tsfm_outcomes()
     log.info("=== selesai: %s prediksi, %s outcome ===", n_pred, n_out)
+    try:
+        dump_db()
+    except Exception:                                  # noqa: BLE001 - prediksi sudah tersimpan
+        log.exception("dump DB GAGAL")
     return 0
+
+
+def dump_db() -> Path:
+    import os
+    import subprocess
+    from datetime import date
+
+    from sqlalchemy.engine import make_url
+
+    from app.db.session import DATABASE_URL
+
+    u = make_url(DATABASE_URL)
+    BACKUP_DB.mkdir(parents=True, exist_ok=True)
+    tujuan = BACKUP_DB / f"vestigo_{date.today():%Y-%m-%d}.dump"
+    # password lewat env, bukan argumen, supaya tidak terlihat di daftar proses
+    env = {**os.environ, "PGPASSWORD": u.password or ""}
+    subprocess.run([str(PG_DUMP), "-Fc", "-h", u.host or "localhost", "-p", str(u.port or 5432),
+                    "-U", u.username, "-d", u.database, "-f", str(tujuan)],
+                   env=env, check=True, capture_output=True,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    for lama in sorted(BACKUP_DB.glob("vestigo_*.dump"))[:-SIMPAN_DUMP]:
+        lama.unlink()
+    log.info("dump DB: %s (%.1f MB)", tujuan.name, tujuan.stat().st_size / 1e6)
+    return tujuan
 
 
 def susulan(dari: str, sampai: str) -> int:
