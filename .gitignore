@@ -41,9 +41,9 @@ htmlcov/
 !**/.env.example
 
 # --- RAG vector store (Phase 5) ---
-# Turunan dari app/rag/knowledge_base.py (di-seed ulang via `python -m app.rag.knowledge_base`).
-# Vektor adalah artefak biner yang dihasilkan, bukan sumber — jangan di-commit.
-backend/app/rag/data/
+# backend/app/rag/data/ SENGAJA di-commit (115 KB): Render Free tidak punya shell
+# untuk seed ulang, jadi image produksi harus membawanya. Regenerasi via
+# `python -m app.rag.knowledge_base`.
 
 # --- Local-only npm config ---
 # frontend/.npmrc memakai script-shell=powershell agar `npm run ...` jalan di

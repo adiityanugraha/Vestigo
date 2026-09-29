@@ -1,0 +1,29 @@
+# Backend Vestigo di Render Free (Blueprint). Frontend tetap di Vercel.
+# Server hanya MELAYANI: semua job (data pasar, prediksi TSFM, dll.) berjalan di
+# laptop lewat Task Scheduler, lalu DB lokal disalin ke DB produksi (Aiven) tiap
+# pagi - lihat app/scheduler/tsfm_harian.py. Karena itu scheduler di sini mati
+# (Render Free tidur setelah 15 menit tanpa pengunjung, jadwal tidak bisa diandalkan).
+services:
+  - type: web
+    name: vestigo-api
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SCHEDULER_ENABLED
+        value: "false"
+      - key: CORS_ORIGINS
+        value: https://vestigo-steel.vercel.app
+      - key: DATABASE_URL          # URI Aiven, diisi di dashboard saat dibuat
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: REDIS_URL             # opsional; kosong = tanpa cache (aman-gagal)
+        sync: false

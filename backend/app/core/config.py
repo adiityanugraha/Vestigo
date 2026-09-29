@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # tanpa kredensial.
     database_url: str | None = None
     redis_url: str | None = None
+    # HANYA di .env laptop: DB produksi (Aiven) yang ditimpa salinan DB lokal tiap
+    # pagi oleh app.scheduler.tsfm_harian. Laptop = sumber data, server = tampilan.
+    prod_database_url: str | None = None
 
     # CORS: origin frontend yang boleh memanggil API.
     # Comma-separated string di .env, mis. "http://localhost:3000,https://app.vercel.app"
